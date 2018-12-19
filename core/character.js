@@ -44,7 +44,7 @@ function show(bot, userID, channelID, con) {
        	var charName = "**" + result[0].characterName + "**";
        	var level = result[0].level;
        	var className = result[0].class;
-       	var text = "<@" + userID + ">: Your currently playing as the " + className + " " + charName + " lvl " + level + ".";
+       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
        	printMessage(bot, text, channelID); 
     });
 } 
