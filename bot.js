@@ -21,7 +21,7 @@ bot.on('ready', function (evt) {
 //initialize important variables
 var character = require('./core/character.js')
 var mysql = require('mysql')
-pre = 'd?'
+pre = '$$'
 
 bot.on('message', function (user, userID, channelID, message, evt) {
     // Our bot needs to know if it will execute a command

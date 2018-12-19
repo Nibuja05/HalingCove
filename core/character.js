@@ -53,26 +53,26 @@ function deleteChar(userID, con, input, bot, channelID, confirm) {
 	try {
 		var name = input[0];
 		if (name.length == 0) {
-			throw "Not a valid name for the character"
+			throw "Not a valid name for the character";
 		}
-		console.log("Deleting the character " + name)
-		console.log("Connected!");
-		var sql = "SELECT cNr, active FROM charList WHERE active = 1 AND userID = " + userID + "";
+		console.log("Deleting the character " + name);
+		var found = false;
+		var sql = "SELECT cNr, name FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
 		con.query(sql, function (err, result) {
 		    if (err) throw err;
-			result.forEach(function(res) {
-				sql = "UPDATE charList SET active = 0 WHERE cNr = " + res.cNr;
-				con.query(sql, function (err, result) {
-					if (err) throw err;
-					console.log("active changed");
-				});
+			if (result.length > 0) {
+				found = true;
+			};
+		});
+		if (found == true && confirm == true) {
+			sql = "DELETE FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
+			con.query(sql, function (err, result) {
+			    if (err) throw err;
+				console.log("1 record deleted");
 			});
-		});
-		sql = "INSERT INTO charList (userID, name, level, class, active) VALUES ('" + userID + "', '" + name + "', '1', 'Unexperienced Adventurer', '1')";
-		con.query(sql, function (err, result) {
-		    if (err) throw err;
-			console.log("1 record inserted");
-		});
+			var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
+			printMessage(bot, text, channelID);
+		}
 	}
 	catch (e) {
 		if (typeof e === 'string') {
