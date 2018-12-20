@@ -143,6 +143,19 @@ function select(bot, con, userID, channelID, input) {
 	}
 }
 
+function showAll(bot, con, userID, channelID) {
+	var sql = "SELECT name, level, class FROM charList WHERE userID = " + userID + "";
+	con.query(sql, function (err, result) {
+	    if (err) throw err;
+	    var text = "Currently you own following characters:\n";
+		result.forEach(function(res) {
+			var row = " - **" + res.name + "**, " + res.class + " level " + res.level + "\n";
+			text = text + row;
+		});
+		printMessage(bot, channelID, text);
+	});
+}
+
 function printMessage(bot, channelID, text) {
     bot.sendMessage({
         to: channelID,
@@ -154,3 +167,4 @@ module.exports.createNew = createNew;
 module.exports.show = show;
 module.exports.deleteChar = deleteChar;
 module.exports.select = select;
+module.exports.showAll = showAll;

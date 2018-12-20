@@ -107,6 +107,9 @@ function manageCharacter(user, userID, channelID, args, evt) {
             break;
         case 'select':
             character.select(bot, con, userID, channelID, args);
+            break;
+        case 'showAll':
+            character.showAll(bot, con, userID, channelID);
         break;
     }
 }
