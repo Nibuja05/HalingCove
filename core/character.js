@@ -40,12 +40,17 @@ function show(bot, userID, channelID, con) {
 	var sql = "SELECT userList.name AS userName, charList.name AS characterName, charList.level, charList.class FROM charList INNER JOIN userList ON charList.userID = userList.userID WHERE charList.active = 1 AND userList.userID = " + userID;
     con.query(sql, function (err, result) {
         if (err) throw err;
-        var uName = result[0].userName;
-       	var charName = "**" + result[0].characterName + "**";
-       	var level = result[0].level;
-       	var className = result[0].class;
-       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
-       	printMessage(bot, text, channelID); 
+        if (result.length > 0) {
+        	        var uName = result[0].userName;
+	       	var charName = "**" + result[0].characterName + "**";
+	       	var level = result[0].level;
+	       	var className = result[0].class;
+	       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
+	       	printMessage(bot, text, channelID); 
+       	} else {
+       		var text = "You have no active character!"
+       		printMessage(bot, text, channelID)
+       	}
     });
 } 
 
@@ -63,16 +68,16 @@ function deleteChar(userID, con, input, bot, channelID, confirm) {
 			if (result.length > 0) {
 				found = true;
 			};
+			if (found == true && confirm == true) {
+				sql = "DELETE FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
+				con.query(sql, function (err, result) {
+				    if (err) throw err;
+					console.log("1 record deleted");
+				});
+				var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
+				printMessage(bot, text, channelID);
+			}
 		});
-		if (found == true && confirm == true) {
-			sql = "DELETE FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
-			con.query(sql, function (err, result) {
-			    if (err) throw err;
-				console.log("1 record deleted");
-			});
-			var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
-			printMessage(bot, text, channelID);
-		}
 	}
 	catch (e) {
 		if (typeof e === 'string') {
