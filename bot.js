@@ -36,7 +36,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         switch(cmd) {
             // !ping
             case 'ping':
-                printMessage("Pong!", channelID);
+                printMessage(channelID, "Pong!");
                 break;
             case 'c':
                 manageCharacter(user, userID, channelID, args, evt);
@@ -73,7 +73,6 @@ con.connect(err => {
 });
 
 function userCheck(user, userID) {
-    console.log(userID);
     var sql = "SELECT * FROM userList WHERE userID = " + userID;
     con.query(sql, function (err, result) {
         if (err) throw err;
@@ -96,15 +95,18 @@ function manageCharacter(user, userID, channelID, args, evt) {
 
     switch(cmd) {
         case 'create':
-            if (character.createNew(userID, con, args)) {
-                character.show(bot, userID, channelID, con);
+            if (character.createNew(con, userID, args)) {
+                character.show(bot, con, userID, channelID);
             };
             break;
         case 'delete':
-            character.deleteChar(userID, con, args, bot, channelID, true);
+            character.deleteChar(bot, con, userID, channelID, args, true);
             break;
         case 'show':
-            character.show(bot, userID, channelID, con);
+            character.show(bot, con, userID, channelID);
+            break;
+        case 'select':
+            character.select(bot, con, userID, channelID, args);
         break;
     }
 }
@@ -117,7 +119,7 @@ function showTable(con, name) {
     });
 }
 
-function printMessage(text, channelID) {
+function printMessage(channelID, text) {
     bot.sendMessage({
         to: channelID,
         message: text

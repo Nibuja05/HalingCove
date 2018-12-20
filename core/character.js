@@ -1,5 +1,5 @@
 
-function createNew(userID, con, input) {
+function createNew(con, userID, input) {
 	console.log("Creating new character...");
 	try {
 		var name = input[0];
@@ -36,25 +36,30 @@ function createNew(userID, con, input) {
 	return true;
 }	
 
-function show(bot, userID, channelID, con) {
-	var sql = "SELECT userList.name AS userName, charList.name AS characterName, charList.level, charList.class FROM charList INNER JOIN userList ON charList.userID = userList.userID WHERE charList.active = 1 AND userList.userID = " + userID;
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        if (result.length > 0) {
-        	        var uName = result[0].userName;
-	       	var charName = "**" + result[0].characterName + "**";
-	       	var level = result[0].level;
-	       	var className = result[0].class;
-	       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
-	       	printMessage(bot, text, channelID); 
-       	} else {
-       		var text = "You have no active character!"
-       		printMessage(bot, text, channelID)
-       	}
-    });
+function show(bot, con, userID, channelID) {
+	try {
+		var sql = "SELECT userList.name AS userName, charList.name AS characterName, charList.level, charList.class FROM charList INNER JOIN userList ON charList.userID = userList.userID WHERE charList.active = 1 AND userList.userID = " + userID;
+	    con.query(sql, function (err, result) {
+	        if (err) throw err;
+	        if (result.length > 0) {
+	        	var uName = result[0].userName;
+		       	var charName = "**" + result[0].characterName + "**";
+		       	var level = result[0].level;
+		       	var className = result[0].class;
+		       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
+		       	printMessage(bot, channelID, text); 
+	       	} else {
+	       		var text = "You have no active character!"
+	       		printMessage(bot, channelID, text)
+	       	}
+	    });
+	} 
+	catch (e) {
+		console.log("Invalid Arguments")
+	}
 } 
 
-function deleteChar(userID, con, input, bot, channelID, confirm) {
+function deleteChar(bot, con, userID, channelID, input, confirm) {
 	try {
 		var name = input[0];
 		if (name.length == 0) {
@@ -75,7 +80,7 @@ function deleteChar(userID, con, input, bot, channelID, confirm) {
 					console.log("1 record deleted");
 				});
 				var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
-				printMessage(bot, text, channelID);
+				printMessage(bot, channelID, text);
 			}
 		});
 	}
@@ -88,10 +93,57 @@ function deleteChar(userID, con, input, bot, channelID, confirm) {
 		return false;
 	}
 	return true;
-
 }
 
-function printMessage(bot, text, channelID) {
+function select(bot, con, userID, channelID, input) {
+	try {
+		var name = input[0];
+		var sql = "SELECT cNr FROM charList WHERE userID = " + userID + " AND name = '" + name + "'";
+	    con.query(sql, function (err, result) {
+	        if (err) throw err;
+	        if (result.length > 0) {
+	        	var newChar = result[0];
+	        	console.log(newChar)
+	        	var oldChar = 0;
+	        	sql = "SELECT cNr FROM charList WHERE userID = " + userID + " AND active = 1";
+	        	con.query(sql, function (err, result) {
+				    if (err) throw err;
+				    oldChar = result[0];
+					if (oldChar != undefined) {
+						if (oldChar.cNr != newChar.cNr) {
+							sql = "UPDATE charList SET active = 0 WHERE cNr = " + oldChar.cNr;
+							con.query(sql, function (err, result) {
+								if (err) throw err;
+								sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar.cNr;
+								con.query(sql, function (err, result) {
+									if (err) throw err;
+									show(bot, con, userID, channelID);
+								});
+							});
+						} else {
+							var text = "This character is already active"
+	       					printMessage(bot, channelID, text)
+						}
+					} else {
+						sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar.cNr;
+						con.query(sql, function (err, result) {
+							if (err) throw err;
+							show(bot, con, userID, channelID);
+						});
+					}
+				});
+	       	} else {
+	       		var text = "This character does not exist!"
+	       		printMessage(bot, channelID, text)
+	       	}
+	    });
+	} 
+	catch (e) {
+		console.log("Invalid Arguments")
+	}
+}
+
+function printMessage(bot, channelID, text) {
     bot.sendMessage({
         to: channelID,
         message: text
@@ -101,3 +153,4 @@ function printMessage(bot, text, channelID) {
 module.exports.createNew = createNew;
 module.exports.show = show;
 module.exports.deleteChar = deleteChar;
+module.exports.select = select;
