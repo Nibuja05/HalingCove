@@ -1,28 +1,39 @@
 
-function createNew(con, userID, input) {
+function createNew(bot, con, userID, channelID, input) {
 	console.log("Creating new character...");
 	try {
 		var name = input[0];
 		if (name.length == 0) {
 			throw "Not a valid name for the character"
 		}
-		console.log("New character, named " + name)
-		console.log("Connected!");
-		var sql = "SELECT cNr, active FROM charList WHERE active = 1 AND userID = " + userID + "";
+		var sql = "SELECT cNr FROM charList WHERE name = '" + name + "' AND userID = " + userID + "";
 		con.query(sql, function (err, result) {
 		    if (err) throw err;
-			result.forEach(function(res) {
-				sql = "UPDATE charList SET active = 0 WHERE cNr = " + res.cNr;
+			if (result.length == 0) {
+				console.log("New character, named " + name)
+				console.log("Connected!");
+				sql = "SELECT cNr, active FROM charList WHERE active = 1 AND userID = " + userID + "";
 				con.query(sql, function (err, result) {
-					if (err) throw err;
-					console.log("active changed");
+				    if (err) throw err;
+					result.forEach(function(res) {
+						sql = "UPDATE charList SET active = 0 WHERE cNr = " + res.cNr;
+						con.query(sql, function (err, result) {
+							if (err) throw err;
+							console.log("active changed");
+						});
+					});
 				});
-			});
-		});
-		sql = "INSERT INTO charList (userID, name, level, class, active) VALUES ('" + userID + "', '" + name + "', '1', 'Unexperienced Adventurer', '1')";
-		con.query(sql, function (err, result) {
-		    if (err) throw err;
-			console.log("1 record inserted");
+				sql = "INSERT INTO charList (userID, name, level, class, active) VALUES ('" + userID + "', '" + name + "', '1', 'Unexperienced Adventurer', '1')";
+				con.query(sql, function (err, result) {
+				    if (err) throw err;
+					console.log("[DB] 1 record inserted (charList)");
+					show(bot, con, userID, channelID)
+				});
+			} else {
+				var text = "You already have a character with the name **" + name + "**!";
+				printMessage(bot, channelID, text);
+				return;
+			}
 		});
 	}
 	catch (e) {
@@ -65,7 +76,6 @@ function deleteChar(bot, con, userID, channelID, input, confirm) {
 		if (name.length == 0) {
 			throw "Not a valid name for the character";
 		}
-		console.log("Deleting the character " + name);
 		var found = false;
 		var sql = "SELECT cNr, name FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
 		con.query(sql, function (err, result) {
@@ -73,14 +83,38 @@ function deleteChar(bot, con, userID, channelID, input, confirm) {
 			if (result.length > 0) {
 				found = true;
 			};
-			if (found == true && confirm == true) {
+			if (confirm == "no" || confirm == "n") {
+				sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + userID;
+                con.query(sql, function (err, result) {
+                    if (err) throw err;
+                    console.log("[DB] 1 record updated (lastCommand)")
+                });
+                var text = "Deleting **" + name + "** canceled"
+                printMessage(bot, channelID, text);
+				return;
+			}
+			if (found == true && (confirm == "yes" || confirm == "y")) {
+				console.log("Deleting the character " + name);
 				sql = "DELETE FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
 				con.query(sql, function (err, result) {
 				    if (err) throw err;
-					console.log("1 record deleted");
+					console.log("[DB] 1 record deleted (charList)");
 				});
 				var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
 				printMessage(bot, channelID, text);
+				sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + userID;
+                con.query(sql, function (err, result) {
+                    if (err) throw err;
+                    console.log("[DB] 1 record updated (lastCommand)")
+                });
+			} else if(found == true && confirm == false) {
+				sql = "UPDATE lastCommand SET optValues = 'confirm' WHERE userID = " + userID;
+                con.query(sql, function (err, result) {
+                    if (err) throw err;
+                    console.log("[DB] 1 record updated (lastCommand)")
+                });
+                var text = "Are you sure you want to delete **" + name + "**?";
+                printMessage(bot, channelID, text)
 			}
 		});
 	}
