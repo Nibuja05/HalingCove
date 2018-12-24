@@ -1,3 +1,6 @@
+/**
+ * @module core/character
+ */
 
 /**
  * creates a new charcter for a user
@@ -277,6 +280,7 @@ function printMessage(bot, channelID, text) {
         message: text
     });
 }
+
 
 module.exports.createNew = createNew;
 module.exports.show = show;
