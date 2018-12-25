@@ -10,7 +10,7 @@
  * @param  {int} 		channelID channel identification
  * @param  {string} 	input     the user command
  */
-function createNew(bot, con, userID, channelID, input) {
+function createNew(con, userID, channel, input) {
 	console.log("Creating new character...");
 	try {
 		var name = input[0];
@@ -46,12 +46,12 @@ function createNew(bot, con, userID, channelID, input) {
 				con.query(sql, function (err, result) {
 				    if (err) throw err;
 					console.log("[DB] 1 record inserted (charList)");
-					show(bot, con, userID, channelID)
+					show(con, userID, channelID)
 				});
 
 			} else {
 				var text = "You already have a character with the name **" + name + "**!";
-				printMessage(bot, channelID, text);
+				printMessage(channel, text);
 				return;
 			}
 		});
@@ -74,7 +74,7 @@ function createNew(bot, con, userID, channelID, input) {
  * @param  {int} 		userID    user identification
  * @param  {int} 		channelID channel identification
  */
-function show(bot, con, userID, channelID) {
+function show(con, userID, channel) {
 	try {
 		var sql = "SELECT userList.name AS userName, charList.name AS characterName, charList.level, charList.class FROM charList INNER JOIN userList ON charList.userID = userList.userID WHERE charList.active = 1 AND userList.userID = " + userID;
 	    con.query(sql, function (err, result) {
@@ -87,11 +87,11 @@ function show(bot, con, userID, channelID) {
 		       	var level = result[0].level;
 		       	var className = result[0].class;
 		       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
-		       	printMessage(bot, channelID, text); 
+		       	printMessage(channel, text); 
 
 	       	} else {
 	       		var text = "You have no active character!"
-	       		printMessage(bot, channelID, text)
+	       		printMessage(channel, text)
 	       	}
 	    });
 	} 
@@ -109,7 +109,7 @@ function show(bot, con, userID, channelID) {
  * @param  {string} 	input     the user command
  * @param  {string} 	confirm   user reaction
  */
-function deleteChar(bot, con, userID, channelID, input, confirm) {
+function deleteChar(con, userID, channel, input, confirm) {
 	try {
 		var name = input[0];
 
@@ -136,7 +136,7 @@ function deleteChar(bot, con, userID, channelID, input, confirm) {
                     console.log("[DB] 1 record updated (lastCommand)")
                 });
                 var text = "Deleting **" + name + "** canceled"
-                printMessage(bot, channelID, text);
+                printMessage(channel, text);
 				return;
 			}
 
@@ -149,7 +149,7 @@ function deleteChar(bot, con, userID, channelID, input, confirm) {
 					console.log("[DB] 1 record deleted (charList)");
 				});
 				var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
-				printMessage(bot, channelID, text);
+				printMessage(channel, text);
 				sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + userID;
                 con.query(sql, function (err, result) {
                     if (err) throw err;
@@ -164,7 +164,7 @@ function deleteChar(bot, con, userID, channelID, input, confirm) {
                     console.log("[DB] 1 record updated (lastCommand)")
                 });
                 var text = "Are you sure you want to delete **" + name + "**?";
-                printMessage(bot, channelID, text)
+                printMessage(channel, text)
 			}
 		});
 	}
@@ -187,7 +187,7 @@ function deleteChar(bot, con, userID, channelID, input, confirm) {
  * @param  {int} 		channelID channel identification
  * @param  {string} 	input     the user command
  */
-function select(bot, con, userID, channelID, input) {
+function select(con, userID, channel, input) {
 	try {
 		var name = input[0];
 		var sql = "SELECT cNr FROM charList WHERE userID = " + userID + " AND name = '" + name + "'";
@@ -216,13 +216,13 @@ function select(bot, con, userID, channelID, input) {
 								sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar.cNr;
 								con.query(sql, function (err, result) {
 									if (err) throw err;
-									show(bot, con, userID, channelID);
+									show(con, userID, channelID);
 								});
 							});
 
 						} else {
 							var text = "This character is already active"
-	       					printMessage(bot, channelID, text)
+	       					printMessage(channel, text)
 						}
 
 					//set the new character to active
@@ -230,14 +230,14 @@ function select(bot, con, userID, channelID, input) {
 						sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar.cNr;
 						con.query(sql, function (err, result) {
 							if (err) throw err;
-							show(bot, con, userID, channelID);
+							show(con, userID, channelID);
 						});
 					}
 				});
 
 	       	} else {
 	       		var text = "This character does not exist!"
-	       		printMessage(bot, channelID, text)
+	       		printMessage(channel, text)
 	       	}
 	    });
 	} 
@@ -253,7 +253,7 @@ function select(bot, con, userID, channelID, input) {
  * @param  {int} 		userID    user identification
  * @param  {int} 		channelID channel identification
  */
-function showAll(bot, con, userID, channelID) {
+function showAll(con, userID, channel) {
 	var sql = "SELECT name, level, class FROM charList WHERE userID = " + userID + "";
 	con.query(sql, function (err, result) {
 	    if (err) throw err;
@@ -264,7 +264,7 @@ function showAll(bot, con, userID, channelID) {
 			var row = " - **" + res.name + "**, " + res.class + " level " + res.level + "\n";
 			text = text + row;
 		});
-		printMessage(bot, channelID, text);
+		printMessage(channel, text);
 	});
 }
 
@@ -274,11 +274,10 @@ function showAll(bot, con, userID, channelID) {
  * @param  {int} 		channelID channel identification
  * @param  {string} 	text      the content of the message
  */
-function printMessage(bot, channelID, text) {
-    bot.sendMessage({
-        to: channelID,
-        message: text
-    });
+function printMessage(channel, text) {
+    channel.send(text)
+  	.then(message => console.log(`Sent message: ${message.content}`))
+  	.catch(console.error);
 }
 
 

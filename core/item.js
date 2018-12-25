@@ -6,15 +6,13 @@
  * generates an item with radnom properties and saves it in the database
  * @param  {Connection} con 	database connection 
  */
-function createRandom(con, level) {
+function createRandom(con, level, insert) {
 
 	try {
 		if (typeof(level) != "string"){
 			var level = getRandomInt(1, 50);
 		} else {
-			console.log("Parsing... " + level);
 			level = Number(level);
-			console.log(level)
 		}
 	} catch (e) {
 		console.log("Invalid Arguments");
@@ -41,15 +39,34 @@ function createRandom(con, level) {
 		itemText += "\n\tValue: " + value;
 		console.log(itemText);
 
+		if (insert == true) {
+			console.log("[Item] Inserting item to DB...")
+			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ")";
+			console.log(sql);
+			con.query(sql, function (err, result) {
+				if (err) throw err;
+				console.log("[DB] 1 record inserted (itemList)")
+			});
+		}
+
 	});
 }
 
+/**
+ * create multiple items at once
+ * @param  {Connection} con   	database connection
+ * @param  {string} 	input 	input string
+ */
 function createRandomMultiple(con, input) {
 	console.log("[Item] Creating multiple items:")
 	try {
 		var amount = parseInt(input[0], 10);
+		var insert = false;
+		if (amount == 1) {
+			insert = true;
+		}
 		for (var i = 0; i < amount; i++) {
-			createRandom(con, input[1]);
+			createRandom(con, input[1], insert);
 		}
 	} catch (e) {
 		console.log("Invalid Arguments");
@@ -157,6 +174,11 @@ function generateValue(grade, level, modifier) {
  * @return {int}          			stat value
  */
 function generateStat(type, grade, level, modifier) {
+
+	if (type == "None") {
+		return 0;
+	}
+
 	var value = 0;
 	var baseGradeMult = 1.0;
 	var newGrade = -(5 - grade);
@@ -168,7 +190,13 @@ function generateStat(type, grade, level, modifier) {
 			baseStatValue = 4;
 			break;
 		case 'ArmorPierce':
+			baseStatValue = 1.5;
+			break;
+		case 'ArmorBreak':
 			baseStatValue = 0.5;
+			break;
+		case 'MagicAttack':
+			baseStatValue = 3;
 			break;
 	}
 	var minStatValue = baseStatValue - (baseStatValue / 10);

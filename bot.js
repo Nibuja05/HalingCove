@@ -1,36 +1,34 @@
-var Discord = require('discord.io');
-var logger = require('winston');
+var Discord = require('discord.js');
 var auth = require('./auth.json');
-// Configure logger settings
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, {
-    colorize: true
+
+const client = new Discord.Client();
+client.on('ready', () => {
+  console.log(`Logged in as ${client.user.tag}!`);
 });
-logger.level = 'debug';
-// Initialize Discord Bot
-var bot = new Discord.Client({
-   token: auth.token,
-   autorun: true
-});
-bot.on('ready', function (evt) {
-    logger.info('Connected');
-    logger.info('Logged in as: ');
-    logger.info(bot.username + ' - (' + bot.id + ')');
-});
+
+client.login(auth.token);
 
 //initialize important variables
 var character = require('./core/character.js')
 var item = require('./core/item.js')
 var mysql = require('mysql')
-pre = '$$'
+const pre = '$$'
 
 //Establish Connection to the database
 console.log("Start Connecting to DB...");
 
+/*
 var server = "sql7.freemysqlhosting.net"
-    var database = "sql7270616"
-    var user = "sql7270616"
-    var password = "1XgI9ZR5yD"
+var database = "sql7270616"
+var user = "sql7270616"
+var password = "1XgI9ZR5yD"
+ */
+
+var server = "www.db4free.net"
+var database = "dungeondwarfs"
+var user = "nibuja"
+var password = "pw1345!PW"
+
 
 var con = mysql.createConnection({
   host: server,
@@ -45,10 +43,15 @@ con.connect(err => {
     console.log("Connected to database!");
 });
 
-//OnMessage Event
-bot.on('message', function (user, userID, channelID, message, evt) {
-    // Our bot needs to know if it will execute a command
-    var len = pre.length;
+client.on('message', msg => {
+	var len = pre.length;
+
+    var user = msg.client.user;
+    var userID = user.id;
+    var channel = msg.channel;
+    var channelID = channel.id;
+    var message = msg.content;
+
 
     //check the last command
     checkLastCommand(userID, channelID, message, function(confirm, newMessage) {
@@ -64,26 +67,26 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         switch(cmd) {
             // !ping
             case 'ping':
-                printMessage(channelID, "Pong!");
+                printMessage(channel, "Pong!");
                 break;
             case 'c':
-                manageCharacter(user, userID, channelID, args, evt, confirm);
+                manageCharacter(msg, user, userID, channel, args, confirm);
                 break;
             case 'char':
-                manageCharacter(user, userID, channelID, args, evt, confirm);
+                manageCharacter(msg, user, userID, channel, args, confirm);
                 break;
             case 'character':
-                manageCharacter(user, userID, channelID, args, evt, confirm);
+                manageCharacter(msg, user, userID, channel, args, confirm);
             	break;
             case 'dev':
-            	manageDevOperations(user, userID, channelID, args, evt, confirm, evt);
+            	manageDevOperations(msg, user, userID, channel, args, confirm);
             break;
             // Just add any case commands if you want to..
         }
     });
 });
 
-function checkLastCommand(userID, channelID, message, callback) {
+function checkLastCommand(userID, channel, message, callback) {
     var sql = "SELECT functionName, optValues FROM lastCommand WHERE userID = " + userID;
     con.query(sql, function (err, result) {
         if (err) throw err;
@@ -97,7 +100,7 @@ function checkLastCommand(userID, channelID, message, callback) {
                 if (optVal === "confirm") {
                     if (message.substring(0, pre.length) == pre) {
                         var text = "No new command allowed, please answer or write 'cancel'"
-                        printMessage(channelID, text);
+                        printMessage(channel, text);
                         return;
                     } else if (message == "cancel") {
                         sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + userID;
@@ -106,7 +109,7 @@ function checkLastCommand(userID, channelID, message, callback) {
                             console.log("[DB] 1 record updated (lastCommand)")
                         });
                         var text = "Action canceled"
-                        printMessage(bot, channelID, text);
+                        printMessage(channel, text);
                         return;
                     } else {
                         return callback(message, "$$" + result[0].functionName);
@@ -149,37 +152,35 @@ function userCheck(user, userID) {
     });
 }
 
-function manageCharacter(user, userID, channelID, args, evt, confirm) {
+function manageCharacter(msg, user, userID, channel, args, confirm) {
     //find user arguments
     var cmd = args[0];
     args = args.splice(1);
 
     switch(cmd) {
         case 'create':
-            character.createNew(bot, con, userID, channelID, args)
+            character.createNew(con, userID, channel, args)
             break;
         case 'delete':
-            character.deleteChar(bot, con, userID, channelID, args, confirm);
+            character.deleteChar(con, userID, channel, args, confirm);
             break;
         case 'show':
-            character.show(bot, con, userID, channelID);
+            character.show(con, userID, channel);
             break;
         case 'select':
-            character.select(bot, con, userID, channelID, args);
+            character.select(con, userID, channel, args);
             break;
         case 'showAll':
-            character.showAll(bot, con, userID, channelID);
+            character.showAll(con, userID, channel);
         break;
     }
 }
 
-function manageDevOperations(user, userID, channelID, args, evt, confirm) {
+function manageDevOperations(msg, user, userID, channel, args, confirm) {
 	//find user arguments
 	var admin = false;
 	var adminRole = '524938050380365836';
-	if (evt.d.member.roles.includes(adminRole)) {
-		admin = true;
-	}
+	admin = true;
 
 	if (admin) {
 		var cmd = args[0];
@@ -214,13 +215,14 @@ function showTable(con, name) {
  * @param  {string} channelID channel identifier
  * @param  {string} text      text to send
  */
-function printMessage(channelID, text) {
-    bot.sendMessage({
-        to: channelID,
-        message: text
-    });
+function printMessage(channel, text) {
+    channel.send(text)
+  	.then(message => console.log(`Sent message: ${message.content}`))
+  	.catch(console.error);
 }
 
 /**
  * @module main
  */
+
+ 
