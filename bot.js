@@ -2,8 +2,10 @@
  * @module bot
  */
 
+//initialize Discord Bot
 const Discord = require('discord.js');
-var auth = require('./auth.json');
+const auth = require('./auth.json');
+const mysql = require('mysql')
 const client = new Discord.Client();
 const prefix = "$$";
 
@@ -11,9 +13,31 @@ client.login(auth.token);
 
 client.on('ready', () => {
   	console.log(`Logged in as ${client.user.tag}!`);
-  	client.user.setActivity("& as prefix");
+  	client.user.setActivity(prefix + " as prefix");
 });
 
+//Establish Connection to the database
+console.log("Start Connecting to DB...");
+
+var server = "www.db4free.net"
+var database = "dungeondwarfs"
+var user = "nibuja"
+var password = "pw1345!PW"
+
+var con = mysql.createConnection({
+  host: server,
+  user: user,
+  password: password,
+  database: database
+});
+
+con.connect(err => {
+    if(err) throw err;
+    console.log("Connected to database!");
+    con.query("SHOW TABLES", console.log);
+});
+
+//main stuff here
 client.on('message', msg => {
 
   	function emoji (id) {
@@ -27,7 +51,7 @@ client.on('message', msg => {
 		var cmd = args[0];
 		args = args.splice(1);
 
-		userCheck(user, userID)
+		userCheck(msg.author)
 
 		switch(cmd) {
 		    case 'ping':
@@ -46,6 +70,75 @@ client.on('message', msg => {
 
 	}
 });
+
+function userCheck(user) {
+    var sql = "SELECT * FROM userList WHERE userID = " + user.id;
+    con.query(sql, function (err, result) {
+        if (err) throw err;
+        if (result.length < 1) {
+            console.log("No user in DB with ID " + user.id + ". Creating new entry")
+            var sql = "INSERT INTO userList (userID, name) VALUES ('" + user.id + "', '" + user.username + "')";
+            con.query(sql, function (err, result) {
+                if (err) throw err;
+                console.log("[DB] 1 record inserted (userList)");
+            });
+        }
+    });
+}
+
+function checkLastCommand(msg, callback) {
+	var user = msg.author;
+	var channel = msg.channel;
+	var message = msg.content;
+    var sql = "SELECT functionName, optValues FROM lastCommand WHERE userID = " + user.id;
+    con.query(sql, function (err, result) {
+        if (err) throw err;
+        var functionName = message.substring(prefix.length);
+        if (result.length > 0) {
+            if (message === prefix) {
+                console.log("Executing command again: $$" + result[0].functionName);
+                return callback(false, "$$" + result[0].functionName);
+            } else {
+                var optVal = result[0].optValues;
+                if (optVal === "confirm") {
+                    if (message.substring(0, prefix.length) == prefix) {
+                        var text = "No new command allowed, please answer or write 'cancel'"
+                        printMessage(channel.id, text);
+                        return;
+                    } else if (message == "cancel") {
+                        sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + user.id;
+                        con.query(sql, function (err, result) {
+                            if (err) throw err;
+                            console.log("[DB] 1 record updated (lastCommand)")
+                        });
+                        var text = "Action canceled"
+                        printMessage(channel, text);
+                        return;
+                    } else {
+                        return callback(message, "$$" + result[0].functionName);
+                    }
+                }
+                if (message.substring(0, prefix.length) == prefix) {
+                    sql = "UPDATE lastCommand SET functionName = '" + functionName + "' WHERE userID = " + user.id;
+                    con.query(sql, function (err, result) {
+                        if (err) throw err;
+                        console.log("[DB] 1 record updated (lastCommand)");
+                        return callback(false, message);
+                    });
+                }
+            }
+        } else {
+            if (message.substring(0, prefix.length) == prefix) {
+                sql = "INSERT INTO lastCommand (userID, functionName, optValues) VALUES (" + user.id + ", '" + functionName + "', 'none')";
+                con.query(sql, function (err, result) {
+                    if (err) throw err;
+                    console.log("[DB] 1 record inserted (lastCommand)");
+                    return callback(false, message);
+                });
+            }
+        }
+    });
+}
 
 function manageCharacter(msg, args, confirm) {
     //find user arguments
