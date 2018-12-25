@@ -49,24 +49,28 @@ client.on('message', msg => {
 
 function manageCharacter(msg, args, confirm) {
     //find user arguments
+    
+    var character = require('./core/character.js');
     var cmd = args[0];
     args = args.splice(1);
 
+    var user = msg.author;
+
     switch(cmd) {
         case 'create':
-            character.createNew(bot, con, userID, channelID, args)
+            character.createNew(con, user.id, channel, args);
             break;
         case 'delete':
-            character.deleteChar(bot, con, userID, channelID, args, confirm);
+            character.deleteChar(con, user.id, channel, args, confirm);
             break;
         case 'show':
-            character.show(bot, con, userID, channelID);
+            character.show(con, user.id, channel);
             break;
         case 'select':
-            character.select(bot, con, userID, channelID, args);
+            character.select(con, user.id, channel, args);
             break;
         case 'showAll':
-            character.showAll(bot, con, userID, channelID);
+            character.showAll(con, user.id, channel);
         break;
     }
 }
