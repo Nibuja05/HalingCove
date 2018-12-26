@@ -33,8 +33,8 @@ var con = mysql.createConnection({
 
 con.connect(err => {
     if(err) throw err;
-    console.log("Connected to database!");
     con.query("SHOW TABLES", console.log);
+    console.log("Connected to database!");
 });
 
 //main stuff here
@@ -85,6 +85,7 @@ function userCheck(user) {
         }
     });
 }
+
 
 function checkLastCommand(msg, callback) {
 	var user = msg.author;

@@ -1,7 +1,8 @@
 
-
 function show() {
-	console.log("Item Created!")
+
+	console.log("[Inv] show Inventory!")
+
 }
 
 module.exports.show = show;
