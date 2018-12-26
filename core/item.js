@@ -6,7 +6,7 @@
  * generates an item with radnom properties and saves it in the database
  * @param  {Connection} con 	database connection 
  */
-function createRandom(con, level, insert) {
+function createRandom(con, channel, level, insert) {
 
 	try {
 		if (typeof(level) != "string"){
@@ -38,6 +38,7 @@ function createRandom(con, level, insert) {
 		itemText +=  "\n\tGrade: " + getGradeName(quality) + "\n\t" + statType1 + ": " + stat1 + "\n\t" + statType2 + ": " + stat2;
 		itemText += "\n\tValue: " + value;
 		console.log(itemText);
+		printMessage(channel, itemText);
 
 		if (insert == true) {
 			console.log("[Item] Inserting item to DB...")
@@ -57,7 +58,7 @@ function createRandom(con, level, insert) {
  * @param  {Connection} con   	database connection
  * @param  {string} 	input 	input string
  */
-function createRandomMultiple(con, input) {
+function createRandomMultiple(con, channel, input) {
 	console.log("[Item] Creating multiple items:")
 	try {
 		var amount = parseInt(input[0], 10);
@@ -66,7 +67,7 @@ function createRandomMultiple(con, input) {
 			insert = true;
 		}
 		for (var i = 0; i < amount; i++) {
-			createRandom(con, input[1], insert);
+			createRandom(con, channel, input[1], insert);
 		}
 	} catch (e) {
 		console.log("Invalid Arguments");
@@ -223,6 +224,12 @@ function getGradeName(grade) {
 		return "";
 	}
 	return grades[grade];
+}
+
+function printMessage(channel, text) {
+    channel.send(text)
+  	.then(message => console.log(`Sent message: ${message.content}`))
+  	.catch(console.error);
 }
 
 module.exports.createRandom = createRandom;
