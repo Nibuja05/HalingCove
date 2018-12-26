@@ -4,7 +4,7 @@
 
 //initialize Discord Bot
 const Discord = require('discord.js');
-const auth = require('./auth.json');
+const auth = require('C://auth.json');
 const mysql = require('mysql')
 const client = new Discord.Client();
 const prefix = "$$";
@@ -19,10 +19,10 @@ client.on('ready', () => {
 //Establish Connection to the database
 console.log("Start Connecting to DB...");
 
-var server = "www.db4free.net"
-var database = "dungeondwarfs"
-var user = "nibuja"
-var password = "pw1345!PW"
+var server = auth.server;
+var database = auth.database;
+var user = auth.user;
+var password = auth.password;
 
 var con = mysql.createConnection({
   host: server,
@@ -33,7 +33,6 @@ var con = mysql.createConnection({
 
 con.connect(err => {
     if(err) throw err;
-    con.query("SHOW TABLES", console.log);
     console.log("Connected to database!");
 });
 
@@ -71,6 +70,18 @@ client.on('message', msg => {
 			        break;
 			    case 'dev':
 			    	manageDevCommands(msg, args, confirm);
+			    	break;
+			    case 'inv':
+			    	manageInventory(msg, args, confirm);
+			    	break;
+			    case 'inventory':
+			    	manageInventory(msg, args, confirm);
+			    	break;
+			    case 'explore':
+			    	manageExplore(msg, args, confirm);
+			    	break;
+			    case 'e':
+			    	manageExplore(msg, args, confirm);
 			    break;
 			}
 		}
@@ -166,6 +177,9 @@ function manageCharacter(msg, args, confirm) {
         case 'show':
             character.show(con, user.id, channel);
             break;
+        case undefined:
+            character.show(con, user.id, channel);
+            break;
         case 'select':
             character.select(con, user.id, channel, args);
             break;
@@ -190,6 +204,44 @@ function manageDevCommands(msg, args, confirm) {
             break;
         case 'createRandomItem':
             item.createRandomMultiple(con, channel, args);
+        break;
+    }
+}
+
+function manageInventory(msg, args, confirm) {
+
+	var inventory = require('./core/inventory.js');
+	var cmd = args[0];
+    args = args.splice(1);
+
+    var user = msg.author;
+    var channel = msg.channel;
+
+    switch(cmd) {
+        case 'show':
+            inventory.show(con, channel, user);
+            break;
+        case undefined:
+        	inventory.show(con, channel, user);
+        break;
+    }
+}
+
+function manageExplore(msg, args, confirm) {
+
+	var explore = require('./core/explore.js');
+	var cmd = args[0];
+    args = args.splice(1);
+
+    var user = msg.author;
+    var channel = msg.channel;
+
+    switch(cmd) {
+        case 'start':
+            explore.start(con, channel, user, args, confirm);
+            break;
+        case undefined:
+        	explore.help(con, channel, user);
         break;
     }
 }

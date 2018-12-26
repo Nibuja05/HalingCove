@@ -42,7 +42,6 @@ function createRandom(con, channel, level, insert) {
 		if (insert == true) {
 			console.log("[Item] Inserting item to DB...")
 			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
-			console.log(sql);
 			con.query(sql, function (err, result) {
 				if (err) throw err;
 				console.log("[DB] 1 record inserted (itemList)");
