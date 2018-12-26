@@ -46,29 +46,35 @@ client.on('message', msg => {
 
 	if (msg.author.bot) return;
 
-	if (msg.content.startsWith(prefix)) {
-		var args = msg.content.substring(prefix.length).split(' ');
-		var cmd = args[0];
-		args = args.splice(1);
+	checkLastCommand(msg, function(confirm, newMessage) {
+		if (newMessage.startsWith(prefix)) {
+			var args = newMessage.substring(prefix.length).split(' ');
+			var cmd = args[0];
+			args = args.splice(1);
 
-		userCheck(msg.author)
+			userCheck(msg.author)
 
-		switch(cmd) {
-		    case 'ping':
-		        printMessage(channel, "Pong!");
-		        break;
-		    case 'c':
-		        manageCharacter(msg, args, confirm);
-		        break;
-		    case 'char':
-		        manageCharacter(msg, args, confirm);
-		        break;
-		    case 'character':
-		        manageCharacter(msg, asg, confirm);
-		    break;
+			console.log("Executing: " + newMessage + " with " + confirm);
+
+			switch(cmd) {
+			    case 'ping':
+			        printMessage(msg.channel, "Pong!");
+			        break;
+			    case 'c':
+			        manageCharacter(msg, args, confirm);
+			        break;
+			    case 'char':
+			        manageCharacter(msg, args, confirm);
+			        break;
+			    case 'character':
+			        manageCharacter(msg, args, confirm);
+			        break;
+			    case 'dev':
+			    	manageDevCommands(msg, args, confirm);
+			    break;
+			}
 		}
-
-	}
+	});
 });
 
 function userCheck(user) {
@@ -86,7 +92,6 @@ function userCheck(user) {
     });
 }
 
-
 function checkLastCommand(msg, callback) {
 	var user = msg.author;
 	var channel = msg.channel;
@@ -98,13 +103,13 @@ function checkLastCommand(msg, callback) {
         if (result.length > 0) {
             if (message === prefix) {
                 console.log("Executing command again: $$" + result[0].functionName);
-                return callback(false, "$$" + result[0].functionName);
+                return callback(false, prefix + result[0].functionName);
             } else {
                 var optVal = result[0].optValues;
                 if (optVal === "confirm") {
                     if (message.substring(0, prefix.length) == prefix) {
                         var text = "No new command allowed, please answer or write 'cancel'"
-                        printMessage(channel.id, text);
+                        printMessage(channel, text);
                         return;
                     } else if (message == "cancel") {
                         sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + user.id;
@@ -116,7 +121,7 @@ function checkLastCommand(msg, callback) {
                         printMessage(channel, text);
                         return;
                     } else {
-                        return callback(message, "$$" + result[0].functionName);
+                        return callback(message, prefix + result[0].functionName);
                     }
                 }
                 if (message.substring(0, prefix.length) == prefix) {
@@ -149,6 +154,7 @@ function manageCharacter(msg, args, confirm) {
     args = args.splice(1);
 
     var user = msg.author;
+    var channel = msg.channel;
 
     switch(cmd) {
         case 'create':
@@ -169,7 +175,26 @@ function manageCharacter(msg, args, confirm) {
     }
 }
 
-function sendMessage(channel, text) {
+function manageDevCommands(msg, args, confirm) {
+
+	var item = require('./core/item.js');
+    var cmd = args[0];
+    args = args.splice(1);
+
+    var user = msg.author;
+    var channel = msg.channel;
+
+    switch(cmd) {
+        case 'test':
+            console.log("Test!")
+            break;
+        case 'createRandomItem':
+            item.createRandomMultiple(con, channel, args);
+        break;
+    }
+}
+
+function printMessage(channel, text) {
 	channel.send(text)
   	.then(message => console.log(`Sent message: ${message.content}`))
   	.catch(console.error);

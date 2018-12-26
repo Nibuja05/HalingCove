@@ -46,7 +46,7 @@ function createNew(con, userID, channel, input) {
 				con.query(sql, function (err, result) {
 				    if (err) throw err;
 					console.log("[DB] 1 record inserted (charList)");
-					show(con, userID, channelID)
+					show(con, userID, channel)
 				});
 
 			} else {
@@ -216,7 +216,7 @@ function select(con, userID, channel, input) {
 								sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar.cNr;
 								con.query(sql, function (err, result) {
 									if (err) throw err;
-									show(con, userID, channelID);
+									show(con, userID, channel);
 								});
 							});
 
@@ -230,7 +230,7 @@ function select(con, userID, channel, input) {
 						sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar.cNr;
 						con.query(sql, function (err, result) {
 							if (err) throw err;
-							show(con, userID, channelID);
+							show(con, userID, channel);
 						});
 					}
 				});

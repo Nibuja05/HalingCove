@@ -37,16 +37,15 @@ function createRandom(con, channel, level, insert) {
 		var itemText = "[Item] Created New Item:\n" + name + "\n\tType: " + typeName + "\n\tLevel: " + level;
 		itemText +=  "\n\tGrade: " + getGradeName(quality) + "\n\t" + statType1 + ": " + stat1 + "\n\t" + statType2 + ": " + stat2;
 		itemText += "\n\tValue: " + value;
-		console.log(itemText);
 		printMessage(channel, itemText);
 
 		if (insert == true) {
 			console.log("[Item] Inserting item to DB...")
-			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ")";
+			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
 			console.log(sql);
 			con.query(sql, function (err, result) {
 				if (err) throw err;
-				console.log("[DB] 1 record inserted (itemList)")
+				console.log("[DB] 1 record inserted (itemList)");
 			});
 		}
 
