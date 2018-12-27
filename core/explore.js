@@ -10,7 +10,7 @@ function start(con, channel, user, input, confirm) {
 
 				var name = result[0].name;
 				var date = new Date();
-				var startTime = date.getFullYear() + "-" + date.getMonth() + "-" + date.getDay() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds(); 
+				var startTime = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds(); 
 				var fullTime = result[0].baseDuration;
 
 				sql = "SELECT cNr FROM charList WHERE active = 1 AND userID = " + user.id;
@@ -18,17 +18,23 @@ function start(con, channel, user, input, confirm) {
 					if (err) throw err;
 					if (result.length) {
 
-						var charNr = result[0].cNr;
-						sql = "INSERT INTO exploration (cNr, exploreType, startTime, fullTime, modifier) VALUES (" + charNr + ", " + exploreID + ", '" + startTime + "', '" + fullTime + "', 'None')";
-
-						console.log("SQL: " + sql);
-						console.log(startTime + " | " + fullTime);
-
+						var charNr = result[0].cNr;						//delete old explorations
+						sql = "SELECT * FROM exploration WHERE cNr = " + charNr;
 						con.query(sql, function (err, result) { 
 							if (err) throw err;
+							if (result.length == 0) {
 
-							printMessage(channel, "Start exploring " + name + "...");
+								sql = "INSERT INTO exploration (cNr, exploreType, startTime, fullTime, modifier) VALUES (" + charNr + ", " + exploreID + ", '" + startTime + "', '" + fullTime + "', 'None')";
+								con.query(sql, function (err, result) { 
+									if (err) throw err;
+									console.log("[DB] 1 record deleted (exploration)")
+									printMessage(channel, "Start exploring " + name + "...");
+								});		
+							} else {
+								printMessage(channel, "You cannot start a new exploration, if you have running or unclaimed missions!")
+							}
 						});
+
 					} else {
 						printMessage(channel, "No active character!")
 					}
@@ -39,6 +45,86 @@ function start(con, channel, user, input, confirm) {
 		});
 	} catch(e) {
 		console.log(e);
+	}
+}
+
+async function status(con, channel, user) {
+
+	const rdy = await isMissionReady(con, user);
+	var difference = rdy[0];
+	var fullTimeSec = rdy[1];
+
+	if(difference < fullTimeSec) {
+		var newDiff = Math.floor(fullTimeSec - difference);
+		printMessage(channel, "Currently on a mission, ending in " + newDiff + " seconds");
+	} else
+	{
+		printMessage(channel, "Last Mission Complete");
+	}
+
+}
+
+function isMissionReady(con, user) {
+
+	return new Promise((resolve, reject) => {
+		try {
+			var sql = "SELECT EX.startTime, EX.fullTime, CH.cNR FROM exploration AS EX, charList AS CH WHERE EX.cNr = CH.cNr AND CH.active = 1 AND CH.userID = " + user.id;
+			con.query(sql, function (err, result) { 
+				if (err) throw err;
+
+				if (result.length > 0) {
+					var startDate = new Date(result[0].startTime);
+					var fullTime = result[0].fullTime;
+					var fullTimeVal = fullTime.match(/\d+/g);
+					var fullTimeSec = [3600, 60, 1].map( (x,index) => x * fullTimeVal[index]).reduce((a, b) => a + b, 0);
+					var nowDate = new Date();
+					var difference = (nowDate.getTime() - startDate.getTime()) / 1000;
+
+					resolve([difference, fullTimeSec]);	
+				} else {
+					resolve([0,0]);
+				}
+			});
+		} catch(e) {
+			reject(e);
+		}
+	});
+
+}
+
+async function claim(con, channel, user) {
+
+	const item = require('./item.js');
+	const inventory = require('./inventory.js');
+	const rdy = await isMissionReady(con, user);
+	var difference = rdy[0];
+	var fullTimeSec = rdy[1];
+
+	if(difference < fullTimeSec) {
+		status(con, channel, user);
+	} else {
+		sql = "SELECT cNr FROM charList WHERE active = 1 AND userID = " + user.id;
+		con.query(sql, function (err, result) { 
+			if (err) throw err;
+			var charNr = result[0].cNr;	
+			if (result.length > 0) {
+				sql = "DELETE FROM exploration WHERE cNr = " + charNr;
+				con.query(sql, async function (err, result) { 
+					if (err) throw err;
+					if(result.affectedRows > 0) {
+						console.log("[DB] 1 record deleted (exploration)");
+
+						const reward = await item.createRandom(con, channel, 1, true);
+						var rewardName = reward[0];
+						var rewardID = reward[1];
+						inventory.add(con, channel, user, charNr, rewardID);
+						printMessage(channel, "Sucessfully claimed reward for last exploration!\n**Reward:** " + rewardName);
+					} else {
+						printMessage(channel, "No active exploration!")
+					}
+				});
+			}
+		});
 	}
 }
 
@@ -58,3 +144,5 @@ function printMessage(channel, text) {
 
 module.exports.start = start;
 module.exports.help = help;
+module.exports.status = status;
+module.exports.claim = claim;

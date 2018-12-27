@@ -242,6 +242,12 @@ function manageExplore(msg, args, confirm) {
             break;
         case undefined:
         	explore.help(con, channel, user);
+        	break;
+        case 'status':
+        	explore.status(con, channel, user);
+        	break;
+        case 'claim':
+        	explore.claim(con, channel, user);
         break;
     }
 }

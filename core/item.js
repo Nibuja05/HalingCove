@@ -8,46 +8,49 @@
  */
 function createRandom(con, channel, level, insert) {
 
-	try {
-		if (typeof(level) != "string"){
-			var level = getRandomInt(1, 50);
-		} else {
-			level = Number(level);
-		}
-	} catch (e) {
-		console.log("Invalid Arguments");
-		return;
-	}
-
-	getAllTypes(con, function(types) {
-		var type = getRandomElement(types);
-		var typeID = type[0];
-		var typeName = type[1];
-
-		var quality = getRandomInt(0, 10);
-
-		var name = generateRandomName(typeName, quality, level);
-		var value = generateValue(quality, level, null)
-
-		var statType1 = type[2];
-		var stat1 = generateStat(statType1, quality, level, null)
-		var statType2 = type[3];
-		var stat2 = generateStat(statType2, quality, level, null)
-
-		var itemText = "[Item] Created New Item:\n" + name + "\n\tType: " + typeName + "\n\tLevel: " + level;
-		itemText +=  "\n\tGrade: " + getGradeName(quality) + "\n\t" + statType1 + ": " + stat1 + "\n\t" + statType2 + ": " + stat2;
-		itemText += "\n\tValue: " + value;
-		printMessage(channel, itemText);
-
-		if (insert == true) {
-			console.log("[Item] Inserting item to DB...")
-			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
-			con.query(sql, function (err, result) {
-				if (err) throw err;
-				console.log("[DB] 1 record inserted (itemList)");
-			});
+	return new Promise((resolve, reject) => {
+		try {
+			if (typeof(level) != "string"){
+				var level = getRandomInt(1, 50);
+			} else {
+				level = Number(level);
+			}
+		} catch (e) {
+			console.log("Invalid Arguments");
+			return;
 		}
 
+		getAllTypes(con, function(types) {
+			var type = getRandomElement(types);
+			var typeID = type[0];
+			var typeName = type[1];
+
+			var quality = getRandomInt(0, 10);
+
+			var name = generateRandomName(typeName, quality, level);
+			var value = generateValue(quality, level, null)
+
+			var statType1 = type[2];
+			var stat1 = generateStat(statType1, quality, level, null)
+			var statType2 = type[3];
+			var stat2 = generateStat(statType2, quality, level, null)
+
+			var itemText = "[Item] Created New Item:\n" + name + "\n\tType: " + typeName + "\n\tLevel: " + level;
+			itemText +=  "\n\tGrade: " + getGradeName(quality) + "\n\t" + statType1 + ": " + stat1 + "\n\t" + statType2 + ": " + stat2;
+			itemText += "\n\tValue: " + value;
+			//printMessage(channel, itemText);
+
+			if (insert == true) {
+				console.log("[Item] Inserting item to DB...")
+				var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
+				con.query(sql, function (err, result) {
+					if (err) throw err;
+					console.log("[DB] 1 record inserted (itemList)");
+					resolve([name, result.insertId]);
+				});
+			}
+
+		});
 	});
 }
 
