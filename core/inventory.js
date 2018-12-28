@@ -1,34 +1,39 @@
 
-function show(con, channel, user) {
+async function show(con, channel, user) {
 
-	var sql = "SELECT DISTINCT Cha.name AS charName, Item.name AS itemName, Inv.count, Inv.category";
+	var sql = "SELECT DISTINCT Cha.name AS charName, Item.name AS itemName, Inv.count, Itype.category";
+	sql += ", Itype.stat1Description, Itype.stat2Description, Item.stat1, Item.stat2, Item.value AS itemValue, Item.level"
 	sql += " FROM charList AS Cha, itemList AS Item, isInInventory AS Inv, itemType As Itype";
-	sql += " WHERE Cha.cNr = Inv.cNr AND Item.itemID = Inv.itemID";
-	con.query(sql, function (err, result) {
-		if (err) throw err;
-		var invText = "Inventory from " + user.username + ":";
-		var categories = {};
-		result.forEach(res => {
-			if (categories[res.category] == undefined) {
-				categories[res.category] = [];
-			}
-			var tempText = "\t" + res.count + "x " + res.itemName + " (Level ?)";
-			tempText += "\n\t\tMore Inforamtion!!"
-			categories[res.category].push(tempText);
-		})
+	sql += " WHERE Cha.cNr = Inv.cNr AND Item.itemID = Inv.itemID AND Item.type = Itype.typeID";
+	var result = await con.query(sql);
 
-		console.log(categories)
-		//printMessage(channel, invText);
-	});
+	var invText = "Inventory from " + user.username + ":";
+	var categories = {};
+	result.forEach(res => {
+		if (categories[res.category] == undefined) {
+			categories[res.category] = [];
+		}
+		var tempText = "\n\n\t" + res.count + "x " + res.itemName + " (Level " + res.level + ") ~ *" + res.itemValue + " Gold*";
+		tempText += "\n\t\t" + res.stat1Description + ": " + res.stat1 + ", " + res.stat2Description + ": " + res.stat2;
+		categories[res.category].push(tempText);
+	})
+
+	for (const key in categories) {
+	  	let value = categories[key];
+	  	let optEnding = "";
+	  	if(value.length > 1) optEnding = "s";
+	  	invText += "\n\n**" + key + optEnding + "**:";
+	  	invText += value.reduce((a, b) => a + b, "");
+	}
+
+	printMessage(channel, invText);
 }
 
-function add(con, channel, user, charID, itemID) {
+async function add(con, channel, user, charID, itemID) {
 
-	var sql = "INSERT INTO isInInventory (cNr, itemID, count, category) VALUES (" + charID + ", " + itemID + ", 1, 'Weapon')";
-	con.query(sql, function (err, result) {
-		if (err) throw err;
-		console.log("[DB] 1 record inserted (isInInventory)");
-	});
+	var sql = "INSERT INTO isInInventory (cNr, itemID, count) VALUES (" + charID + ", " + itemID + ", 1)";
+	var result = await con.query(sql);
+	console.log("[DB] 1 record inserted (isInInventory)");
 }
 
 function printMessage(channel, text) {

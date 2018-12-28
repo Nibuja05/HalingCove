@@ -6,51 +6,54 @@
  * generates an item with radnom properties and saves it in the database
  * @param  {Connection} con 	database connection 
  */
-function createRandom(con, channel, level, insert) {
-
-	return new Promise((resolve, reject) => {
+async function createRandom(con, channel, itemLevel, insert) {
+	console.log(itemLevel);
+	return new Promise(async (resolve, reject) => {
+		console.log(itemLevel);
 		try {
-			if (typeof(level) != "string"){
+			console.log("Level: " + itemLevel + ", " + typeof(itemLevel));
+			if (typeof(itemLevel) != "string"){
 				var level = getRandomInt(1, 50);
 			} else {
-				level = Number(level);
+				var level = Number(level);
 			}
 		} catch (e) {
 			console.log("Invalid Arguments");
-			return;
+			reject();
 		}
 
-		getAllTypes(con, function(types) {
-			var type = getRandomElement(types);
-			var typeID = type[0];
-			var typeName = type[1];
+		const types = await getAllTypes(con);
 
-			var quality = getRandomInt(0, 10);
+		var type = getRandomElement(types);
+		var typeID = type[0];
+		var typeName = type[1];
 
-			var name = generateRandomName(typeName, quality, level);
-			var value = generateValue(quality, level, null)
+		var quality = getPseudoRandomInt(0, 10, 'expMin', -0.5);
 
-			var statType1 = type[2];
-			var stat1 = generateStat(statType1, quality, level, null)
-			var statType2 = type[3];
-			var stat2 = generateStat(statType2, quality, level, null)
+		var name = await generateRandomName(con, typeName, quality, level, false);
+		var value = generateValue(quality, level, null)
 
-			var itemText = "[Item] Created New Item:\n" + name + "\n\tType: " + typeName + "\n\tLevel: " + level;
-			itemText +=  "\n\tGrade: " + getGradeName(quality) + "\n\t" + statType1 + ": " + stat1 + "\n\t" + statType2 + ": " + stat2;
-			itemText += "\n\tValue: " + value;
-			//printMessage(channel, itemText);
+		var statType1 = type[2];
+		var stat1 = generateStat(statType1, quality, level, null)
+		var statType2 = type[3];
+		var stat2 = generateStat(statType2, quality, level, null)
 
-			if (insert == true) {
-				console.log("[Item] Inserting item to DB...")
-				var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
-				con.query(sql, function (err, result) {
-					if (err) throw err;
-					console.log("[DB] 1 record inserted (itemList)");
-					resolve([name, result.insertId]);
-				});
-			}
+		var itemText = "[Item] Created New Item:\n" + name + "\n\tType: " + typeName + "\n\tLevel: " + level;
+		itemText +=  "\n\tGrade: " + getGradeName(quality) + "\n\t" + statType1 + ": " + stat1 + "\n\t" + statType2 + ": " + stat2;
+		itemText += "\n\tValue: " + value;
+		//printMessage(channel, itemText);
 
-		});
+		if (insert == true) {
+			console.log("[Item] Inserting item to DB...")
+			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
+			var result = await con.query(sql);
+
+			console.log("[DB] 1 record inserted (itemList)");
+			resolve([name, result.insertId]);
+		} else {
+			resolve([]);
+		}
+
 	});
 }
 
@@ -83,16 +86,17 @@ function createRandomMultiple(con, channel, input) {
  * @return {Array}            		array with elements: [typeID(int),name(string),type1(string),type2(string)]
  */
 function getAllTypes(con, callback) {
-	var types = [];
-	var sql = "SELECT typeID, name, stat1Description, stat2Description FROM itemType";
-	con.query(sql, function (err, result) {
-		if (err) throw err;
-		result.forEach( function(res) {
+	return new Promise(async (resiolve, reject) => {
+		var types = [];
+		var sql = "SELECT typeID, name, stat1Description, stat2Description FROM itemType";
+		var result = await con.query(sql);
+		result.forEach( res => {
 			var tempArr = [res.typeID, res.name, res.stat1Description, res.stat2Description];
 			types.push(tempArr);
 		});
-		return callback(types);
-	});
+		resolve(types);
+	})
+
 }
 
 /**
@@ -128,6 +132,37 @@ function getRandomElement(arr) {
 	return arr[getRandomInt(0,max)];
 }
 
+function getPseudoRandomInt(min, max, genType, genStat) {
+	var globMax = 1000;
+	var rand = getRandomInt(1, globMax);
+	var randDict = {};
+	switch(genType) {
+		//lowest number with highest probability
+		//genStat: bonus for lowest number
+		case 'expMin':
+			let randArr = new Array(max + 1 - min).fill(1);
+			randArr = randArr.map((x, index) => min + x * index);
+			let boost = genStat * globMax
+			let mult = (globMax - boost) / (Math.sqrt(max + 1 - min));
+			function func(x) { return boost + Math.sqrt(x) * mult };
+			let prob = 0;
+			randArr.forEach((x, index) => {
+				randDict[x] = func(index + 1);
+			});
+		break;
+	}
+	var pseudoRand = min;
+	for (const key in randDict) {
+		let value = randDict[key];
+		if (value < rand) {
+			pseudoRand = key;
+		} else {
+			break;
+		}
+	};
+	return pseudoRand;
+}
+
 /**
  * returns a random item name for an specific item type and grade
  * @param  {string} 	type  	item type
@@ -135,12 +170,64 @@ function getRandomElement(arr) {
  * @param  {int} 		level  	item level
  * @return {string}       		random name
  */
-function generateRandomName(type, grade, level) {
+async function generateRandomName(con, type, grade, level, isInSet) {
 	var sets = ["of Abserath", "of Kalingdor", "of Sphirenar", "of Lar", "of Haldrin", "of Jerfandur", "of Cerwantes"];
-
-	var name = getGradeName(grade) + " " + type + " " + getRandomElement(sets);
+	var set = getRandomElement(sets);
+	if(isInSet == false) {
+		set = "";
+	}
+	var name = getGradeName(grade) + " " + await getLevelName(con, level, type) + " " + set;
 
 	return name;
+}
+
+/**
+ * returns the name for a specific grade
+ * @param  {int} 	grade 	rarity/quality from 0 to 10
+ * @return {string}    		grade name   
+ */
+function getGradeName(grade) {
+	var grades = ["Broken", "Corridated", "Old", "Shabby", "Ordinary", "New", "Shiny", "Superior", "Majestic", "Epic", "Legendary"];
+	if (grade < 0 || grade > 10) {
+		return "";
+	}
+	return grades[grade];
+}
+
+async function getLevelName(con, level, type) {
+	if(level < 1 || level > 100) return "";
+	var name = "";
+	var mainIndex = (level - 1) % 10;
+	var preIndex = Math.floor(level / 10);
+
+	var metal = ["Copper", "Iron", "Bronze", "Steel", "Silver", "Platinum", "Titanium", "Mithril", "Adamant", "Arcanium"];
+	var metalPre = ["", "Polished", "Hardened", "Reinforced", "Ornamented", "Enchanted", "Blessed", "Eternal", "Holy", "Dragon Blood"];
+
+	var magic = ["Birch", "Cedar", "Oak", "Bone", "Ironwood", "Quartz", "Silver", "Gold", "Ivory", "Crystal" ];
+	var magicPre = ["", "Polished", "Carved", "Decorated", "Ornamented", "Enchanted", "Blessed", "Eternal", "Holy", "Dragon Blood"];
+
+	var category = await getSubCategory(con, type);
+	switch(category) {
+		case 'metal':
+			name = metalPre[preIndex] + " " + metal[mainIndex] + " " + type;
+			break;
+		case 'magic':
+			name = magicPre[preIndex] + " " + magic[mainIndex] + " " + type;
+		break;
+	}
+	return name;
+}
+
+function getSubCategory(con, type) {
+	return new Promise(async (resolve, reject) => {
+		var sql = "SELECT subCategory FROM itemType WHERE name = '" + type + "'";
+		const result = await con.query(sql)
+		if (result.length > 0) {
+			resolve(result[0].subCategory);
+		} else {
+			resolve("");
+		}
+	})
 }
 
 /**
@@ -212,19 +299,6 @@ function generateStat(type, grade, level, modifier) {
 	//add modifier stuff here
 	
 	return value;
-}
-
-/**
- * returns the name for a specific grade
- * @param  {int} 	grade 	rarity/quality from 0 to 10
- * @return {string}    		grade name   
- */
-function getGradeName(grade) {
-	var grades = ["Broken", "Corridated", "Old", "Shabby", "Ordinary", "New", "Shiny", "Superior", "Majestic", "Epic", "Legendary"];
-	if (grade < 0 || grade > 10) {
-		return "";
-	}
-	return grades[grade];
 }
 
 function printMessage(channel, text) {

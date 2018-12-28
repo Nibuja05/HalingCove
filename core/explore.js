@@ -1,50 +1,47 @@
 
-function start(con, channel, user, input, confirm) {
+async function start(con, channel, user, input, confirm) {
 
 	try {
 		var exploreID = Number(input[0]);
 		var sql = "SELECT name, baseDuration FROM exploreType WHERE exploreTypeID = " + exploreID;
-		con.query(sql, function (err, result) {
-			if (err) throw err;
-			if (result.length > 0) {
+		var result = await con.query(sql);
 
-				var name = result[0].name;
-				var date = new Date();
-				var startTime = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds(); 
-				var fullTime = result[0].baseDuration;
+		if (result.length > 0) {
 
-				sql = "SELECT cNr FROM charList WHERE active = 1 AND userID = " + user.id;
-				con.query(sql, function (err, result) { 
-					if (err) throw err;
-					if (result.length) {
+			var name = result[0].name;
+			var date = new Date();
+			var startTime = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds(); 
+			var fullTime = result[0].baseDuration;
 
-						var charNr = result[0].cNr;						//delete old explorations
-						sql = "SELECT * FROM exploration WHERE cNr = " + charNr;
-						con.query(sql, function (err, result) { 
-							if (err) throw err;
-							if (result.length == 0) {
+			const character = require('./character.js');
+			const char = await character.getActive(con, user.id)
 
-								sql = "INSERT INTO exploration (cNr, exploreType, startTime, fullTime, modifier) VALUES (" + charNr + ", " + exploreID + ", '" + startTime + "', '" + fullTime + "', 'None')";
-								con.query(sql, function (err, result) { 
-									if (err) throw err;
-									console.log("[DB] 1 record deleted (exploration)")
-									printMessage(channel, "Start exploring " + name + "...");
-								});		
-							} else {
-								printMessage(channel, "You cannot start a new exploration, if you have running or unclaimed missions!")
-							}
-						});
+			if (char != undefined) {
+			//delete old explorations
+				sql = "SELECT * FROM exploration WHERE cNr = " + char;
+				result = await con.query(sql);
+				if (result.length == 0) {
 
-					} else {
-						printMessage(channel, "No active character!")
-					}
-				});
+					sql = "INSERT INTO exploration (cNr, exploreType, startTime, fullTime, modifier) VALUES (" + char + ", " + exploreID + ", '" + startTime + "', '" + fullTime + "', 'None')";
+					result = await con.query(sql);
+					console.log("[DB] 1 record deleted (exploration)")
+					printMessage(channel, "Start exploring " + name + "...");
+
+				} else {
+					printMessage(channel, "You cannot start a new exploration, if you have running or unclaimed missions!")
+				}
+
 			} else {
-				printMessage(channel, "No exploration with that ID! Use *$$explore list* to view your possibilitites")
+				printMessage(channel, "No active character!")
 			}
-		});
+
+		} else {
+			printMessage(channel, "No exploration with that ID! Use *$$explore list* to view your possibilitites")
+		}
+
 	} catch(e) {
 		console.log(e);
+		console.log("Invalid Arguments!");
 	}
 }
 
@@ -103,28 +100,25 @@ async function claim(con, channel, user) {
 	if(difference < fullTimeSec) {
 		status(con, channel, user);
 	} else {
-		sql = "SELECT cNr FROM charList WHERE active = 1 AND userID = " + user.id;
-		con.query(sql, function (err, result) { 
-			if (err) throw err;
-			var charNr = result[0].cNr;	
-			if (result.length > 0) {
-				sql = "DELETE FROM exploration WHERE cNr = " + charNr;
-				con.query(sql, async function (err, result) { 
-					if (err) throw err;
-					if(result.affectedRows > 0) {
-						console.log("[DB] 1 record deleted (exploration)");
+		const character = require("./character.js");
+		const char = await character.getActive(con, user.id);
+	
+		if (char != undefined) {
+			sql = "DELETE FROM exploration WHERE cNr = " + char;
+			result = await con.query(sql);
 
-						const reward = await item.createRandom(con, channel, 1, true);
-						var rewardName = reward[0];
-						var rewardID = reward[1];
-						inventory.add(con, channel, user, charNr, rewardID);
-						printMessage(channel, "Sucessfully claimed reward for last exploration!\n**Reward:** " + rewardName);
-					} else {
-						printMessage(channel, "No active exploration!")
-					}
-				});
+			if(result.affectedRows > 0) {
+				console.log("[DB] 1 record deleted (exploration)");
+
+				const reward = await item.createRandom(con, channel, "1", true);
+				var rewardName = reward[0];
+				var rewardID = reward[1];
+				inventory.add(con, channel, user, char, rewardID);
+				printMessage(channel, "Sucessfully claimed reward for last exploration!\n**Reward:** " + rewardName);
+			} else {
+				printMessage(channel, "No active exploration!")
 			}
-		});
+		}
 	}
 }
 

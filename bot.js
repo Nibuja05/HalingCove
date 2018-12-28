@@ -5,7 +5,8 @@
 //initialize Discord Bot
 const Discord = require('discord.js');
 const auth = require('C://auth.json');
-const mysql = require('mysql')
+const mysql = require('mysql');
+const util = require('util');
 const client = new Discord.Client();
 const prefix = "$$";
 
@@ -33,11 +34,12 @@ var con = mysql.createConnection({
 
 con.connect(err => {
     if(err) throw err;
+    con.query = util.promisify(con.query);
     console.log("Connected to database!");
 });
 
 //main stuff here
-client.on('message', msg => {
+client.on('message', async msg => {
 
   	function emoji (id) {
 		return client.emojis.get(id).toString();
@@ -45,47 +47,50 @@ client.on('message', msg => {
 
 	if (msg.author.bot) return;
 
-	checkLastCommand(msg, function(confirm, newMessage) {
-		if (newMessage.startsWith(prefix)) {
-			var args = newMessage.substring(prefix.length).split(' ');
-			var cmd = args[0];
-			args = args.splice(1);
+	const check = await checkLastCommand(msg);
+	console.log(check);
+	var confirm = check[0];
+	var newMessage = check[1];
 
-			userCheck(msg.author)
+	if (newMessage.startsWith(prefix)) {
+		var args = newMessage.substring(prefix.length).split(' ');
+		var cmd = args[0];
+		args = args.splice(1);
 
-			console.log("Executing: " + newMessage + " with " + confirm);
+		userCheck(msg.author)
 
-			switch(cmd) {
-			    case 'ping':
-			        printMessage(msg.channel, "Pong!");
-			        break;
-			    case 'c':
-			        manageCharacter(msg, args, confirm);
-			        break;
-			    case 'char':
-			        manageCharacter(msg, args, confirm);
-			        break;
-			    case 'character':
-			        manageCharacter(msg, args, confirm);
-			        break;
-			    case 'dev':
-			    	manageDevCommands(msg, args, confirm);
-			    	break;
-			    case 'inv':
-			    	manageInventory(msg, args, confirm);
-			    	break;
-			    case 'inventory':
-			    	manageInventory(msg, args, confirm);
-			    	break;
-			    case 'explore':
-			    	manageExplore(msg, args, confirm);
-			    	break;
-			    case 'e':
-			    	manageExplore(msg, args, confirm);
-			    break;
-			}
+		console.log("Executing: " + newMessage + " with " + confirm);
+
+		switch(cmd) {
+		    case 'ping':
+		        printMessage(msg.channel, "Pong!");
+		        break;
+		    case 'c':
+		        manageCharacter(msg, args, confirm);
+		        break;
+		    case 'char':
+		        manageCharacter(msg, args, confirm);
+		        break;
+		    case 'character':
+		        manageCharacter(msg, args, confirm);
+		        break;
+		    case 'dev':
+		    	manageDevCommands(msg, args, confirm);
+		    	break;
+		    case 'inv':
+		    	manageInventory(msg, args, confirm);
+		    	break;
+		    case 'inventory':
+		    	manageInventory(msg, args, confirm);
+		    	break;
+		    case 'explore':
+		    	manageExplore(msg, args, confirm);
+		    	break;
+		    case 'e':
+		    	manageExplore(msg, args, confirm);
+		    break;
 		}
-	});
+	}
 });
 
 function userCheck(user) {
@@ -103,58 +108,80 @@ function userCheck(user) {
     });
 }
 
-function checkLastCommand(msg, callback) {
-	var user = msg.author;
-	var channel = msg.channel;
-	var message = msg.content;
-    var sql = "SELECT functionName, optValues FROM lastCommand WHERE userID = " + user.id;
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        var functionName = message.substring(prefix.length);
-        if (result.length > 0) {
-            if (message === prefix) {
-                console.log("Executing command again: $$" + result[0].functionName);
-                return callback(false, prefix + result[0].functionName);
-            } else {
-                var optVal = result[0].optValues;
-                if (optVal === "confirm") {
-                    if (message.substring(0, prefix.length) == prefix) {
-                        var text = "No new command allowed, please answer or write 'cancel'"
-                        printMessage(channel, text);
-                        return;
-                    } else if (message == "cancel") {
-                        sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + user.id;
-                        con.query(sql, function (err, result) {
-                            if (err) throw err;
-                            console.log("[DB] 1 record updated (lastCommand)")
-                        });
-                        var text = "Action canceled"
-                        printMessage(channel, text);
-                        return;
-                    } else {
-                        return callback(message, prefix + result[0].functionName);
-                    }
-                }
-                if (message.substring(0, prefix.length) == prefix) {
-                    sql = "UPDATE lastCommand SET functionName = '" + functionName + "' WHERE userID = " + user.id;
-                    con.query(sql, function (err, result) {
-                        if (err) throw err;
-                        console.log("[DB] 1 record updated (lastCommand)");
-                        return callback(false, message);
-                    });
-                }
-            }
-        } else {
-            if (message.substring(0, prefix.length) == prefix) {
-                sql = "INSERT INTO lastCommand (userID, functionName, optValues) VALUES (" + user.id + ", '" + functionName + "', 'none')";
-                con.query(sql, function (err, result) {
-                    if (err) throw err;
-                    console.log("[DB] 1 record inserted (lastCommand)");
-                    return callback(false, message);
-                });
-            }
-        }
-    });
+/**
+ * checks if the last command requires an answer and other command checking features
+ * @param  {message} 	msg 	message object
+ * @return {Promise}     		Promise returns confirm and the new message
+ */
+function checkLastCommand(msg) {
+
+	return new Promise(async (resolve, reject) => {
+		var user = msg.author;
+		var channel = msg.channel;
+		var message = msg.content;
+	    var sql = "SELECT functionName, optValues FROM lastCommand WHERE userID = " + user.id;
+	    var result = await con.query(sql);
+	    var functionName = message.substring(prefix.length);
+
+	    //check if there is a last command for this user
+	    if (result.length > 0) {
+
+	    	//if the message is only the prefix, execute last command again
+	        if (message === prefix) {
+	            console.log("Executing command again: $$" + result[0].functionName);
+	            resolve([false, prefix + result[0].functionName]);
+
+	        } else {
+
+	        	//if the last command requires a confirm, execute it again with new confirm value
+	            var optVal = result[0].optValues;
+	            if (optVal === "confirm") {
+
+	            	//if the user wants to use a command while the bot awaits a confirm, cancel
+	                if (message.substring(0, prefix.length) == prefix) {
+	                    var text = "No new command allowed, please answer or write 'cancel'"
+	                    printMessage(channel, text);
+	                    reject();
+
+	                //possibility for the user to cancel his confirm action
+	                } else if (message == "cancel") {
+	                    sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + user.id;
+	                    result = await con.query(sql);
+	                    
+	                    console.log("[DB] 1 record updated (lastCommand)")
+	                    var text = "Action canceled"
+	                    printMessage(channel, text);
+	                    reject();
+
+	                //exevute last command with new confirm
+	                } else {
+	                    resolve([message, prefix + result[0].functionName]);
+	                }
+	            }
+
+	            //if the message is an command, save it in the database
+	            if (message.substring(0, prefix.length) == prefix) {
+	                sql = "UPDATE lastCommand SET functionName = '" + functionName + "' WHERE userID = " + user.id;
+	                result = await con.query(sql);
+
+	                console.log("[DB] 1 record updated (lastCommand)");
+	                resolve([false, message]);
+	            }
+	        }
+
+	    //no last command for this user
+	    } else {
+
+	    	//create a new entry with the last command in the database
+	        if (message.substring(0, prefix.length) == prefix) {
+	            sql = "INSERT INTO lastCommand (userID, functionName, optValues) VALUES (" + user.id + ", '" + functionName + "', 'none')";
+	            result = await con.query(sql);
+
+	            console.log("[DB] 1 record inserted (lastCommand)");
+	            return callback(false, message);
+	        }
+	    }
+	});
 }
 
 function manageCharacter(msg, args, confirm) {
@@ -204,6 +231,9 @@ function manageDevCommands(msg, args, confirm) {
             break;
         case 'createRandomItem':
             item.createRandomMultiple(con, channel, args);
+            break;
+        case 'itemTest':
+        	item.createRandom(con, channel, 10, false);
         break;
     }
 }
