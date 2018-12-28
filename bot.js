@@ -38,7 +38,6 @@ con.connect(err => {
     console.log("Connected to database!");
 });
 
-//main stuff here
 client.on('message', async msg => {
 
   	function emoji (id) {
@@ -93,19 +92,20 @@ client.on('message', async msg => {
 	}
 });
 
-function userCheck(user) {
+/**
+ * simply check, if the user is already registered
+ * @param  {user} user user to check
+ */
+async function userCheck(user) {
     var sql = "SELECT * FROM userList WHERE userID = " + user.id;
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        if (result.length < 1) {
-            console.log("No user in DB with ID " + user.id + ". Creating new entry")
-            var sql = "INSERT INTO userList (userID, name) VALUES ('" + user.id + "', '" + user.username + "')";
-            con.query(sql, function (err, result) {
-                if (err) throw err;
-                console.log("[DB] 1 record inserted (userList)");
-            });
-        }
-    });
+    var result = await con.query(sql);
+    
+    if (result.length < 1) {
+        console.log("No user in DB with ID " + user.id + ". Creating new entry")
+        var sql = "INSERT INTO userList (userID, name) VALUES ('" + user.id + "', '" + user.username + "')";
+        result = await con.query(sql);
+        console.log("[DB] 1 record inserted (userList)");
+    }
 }
 
 /**
@@ -212,6 +212,9 @@ function manageCharacter(msg, args, confirm) {
             break;
         case 'showAll':
             character.showAll(con, user.id, channel);
+            break;
+        case 'equip':
+        	character.showEquip(con, user, channel);
         break;
     }
 }

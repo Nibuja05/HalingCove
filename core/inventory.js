@@ -1,10 +1,13 @@
 
 async function show(con, channel, user) {
 
+	const character = require('./character.js');
+	const char = await character.getActive(con, user.id);
+
 	var sql = "SELECT DISTINCT Cha.name AS charName, Item.name AS itemName, Inv.count, Itype.category";
 	sql += ", Itype.stat1Description, Itype.stat2Description, Item.stat1, Item.stat2, Item.value AS itemValue, Item.level"
 	sql += " FROM charList AS Cha, itemList AS Item, isInInventory AS Inv, itemType As Itype";
-	sql += " WHERE Cha.cNr = Inv.cNr AND Item.itemID = Inv.itemID AND Item.type = Itype.typeID";
+	sql += " WHERE Cha.cNr = Inv.cNr AND Item.itemID = Inv.itemID AND Item.type = Itype.typeID AND Cha.cNr = " + char;
 	var result = await con.query(sql);
 
 	var invText = "Inventory from " + user.username + ":";

@@ -52,7 +52,7 @@ async function status(con, channel, user) {
 	var fullTimeSec = rdy[1];
 
 	if(difference < fullTimeSec) {
-		var newDiff = Math.floor(fullTimeSec - difference);
+		var newDiff = Math.ceil(fullTimeSec - difference);
 		printMessage(channel, "Currently on a mission, ending in " + newDiff + " seconds");
 	} else
 	{

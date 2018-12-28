@@ -12,15 +12,13 @@ async function createRandom(con, channel, itemLevel, insert) {
 		console.log(itemLevel);
 		try {
 			console.log("Level: " + itemLevel + ", " + typeof(itemLevel));
-			if (typeof(itemLevel) != "string"){
-				var level = getRandomInt(1, 50);
-			} else {
-				var level = Number(level);
-			}
+			var level = Number(itemLevel);
 		} catch (e) {
 			console.log("Invalid Arguments");
 			reject();
 		}
+
+		console.log(level);
 
 		const types = await getAllTypes(con);
 
@@ -85,8 +83,8 @@ function createRandomMultiple(con, channel, input) {
  * @param  {Function} 	callback 	function to call with result
  * @return {Array}            		array with elements: [typeID(int),name(string),type1(string),type2(string)]
  */
-function getAllTypes(con, callback) {
-	return new Promise(async (resiolve, reject) => {
+function getAllTypes(con) {
+	return new Promise(async (resolve, reject) => {
 		var types = [];
 		var sql = "SELECT typeID, name, stat1Description, stat2Description FROM itemType";
 		var result = await con.query(sql);
@@ -201,18 +199,18 @@ async function getLevelName(con, level, type) {
 	var preIndex = Math.floor(level / 10);
 
 	var metal = ["Copper", "Iron", "Bronze", "Steel", "Silver", "Platinum", "Titanium", "Mithril", "Adamant", "Arcanium"];
-	var metalPre = ["", "Polished", "Hardened", "Reinforced", "Ornamented", "Enchanted", "Blessed", "Eternal", "Holy", "Dragon Blood"];
+	var metalPre = ["", "Polished ", "Hardened ", "Reinforced ", "Ornamented ", "Enchanted ", "Blessed ", "Eternal ", "Holy ", "Dragon Blood "];
 
 	var magic = ["Birch", "Cedar", "Oak", "Bone", "Ironwood", "Quartz", "Silver", "Gold", "Ivory", "Crystal" ];
-	var magicPre = ["", "Polished", "Carved", "Decorated", "Ornamented", "Enchanted", "Blessed", "Eternal", "Holy", "Dragon Blood"];
+	var magicPre = ["", "Polished ", "Carved ", "Decorated ", "Ornamented ", "Enchanted ", "Blessed ", "Eternal ", "Holy ", "Dragon Blood "];
 
 	var category = await getSubCategory(con, type);
 	switch(category) {
 		case 'metal':
-			name = metalPre[preIndex] + " " + metal[mainIndex] + " " + type;
+			name = metalPre[preIndex] + metal[mainIndex] + " " + type;
 			break;
 		case 'magic':
-			name = magicPre[preIndex] + " " + magic[mainIndex] + " " + type;
+			name = magicPre[preIndex] + magic[mainIndex] + " " + type;
 		break;
 	}
 	return name;

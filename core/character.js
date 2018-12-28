@@ -229,6 +229,23 @@ async function showAll(con, userID, channel) {
 	printMessage(channel, text);
 }
 
+async function showEquip(con, user, channel) {
+	const char = await getActive(con, user.id);
+	var sql = "SELECT name FROM charEquip WHERE cNr = " + char;
+	var result = await con.query(sql);
+
+	if (result.length == 0) {
+		sql = "INSERT INTO charEquip (cNr, name) VALUES (" + char + ", 'base')";
+		result = await con.query(sql);
+	}
+	var equip = {};
+	sql = "SELECT "
+
+
+
+	printMessage(channel, "SHOW!")
+}
+
 /**
  * async, returns the character number of the active character from a user
  * @param  {connection} con       database Connection
@@ -266,3 +283,4 @@ module.exports.deleteChar = deleteChar;
 module.exports.select = select;
 module.exports.showAll = showAll;
 module.exports.getActive = getActive;
+module.exports.showEquip = showEquip;
