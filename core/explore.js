@@ -104,13 +104,17 @@ async function claim(con, channel, user) {
 		const char = await character.getActive(con, user.id);
 	
 		if (char != undefined) {
+			sql = "SELECT ext.level AS level FROM exploreType AS ext, exploration AS exp WHERE ext.exploreTypeID = exp.exploreType AND exp.cNr = " + char;
+			var result = await con.query(sql);
+			var level = result[0].level;
+
 			sql = "DELETE FROM exploration WHERE cNr = " + char;
 			result = await con.query(sql);
 
 			if(result.affectedRows > 0) {
 				console.log("[DB] 1 record deleted (exploration)");
 
-				const reward = await item.createRandom(con, channel, "1", true);
+				const reward = await item.createRandom(con, channel, level, true);
 				var rewardName = reward[0];
 				var rewardID = reward[1];
 				inventory.add(con, channel, user, char, rewardID);

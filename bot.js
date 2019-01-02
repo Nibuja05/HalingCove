@@ -213,8 +213,11 @@ function manageCharacter(msg, args, confirm) {
         case 'showAll':
             character.showAll(con, user.id, channel);
             break;
-        case 'equip':
+        case 'equipment':
         	character.showEquip(con, user, channel);
+        	break;
+        case 'equip':
+        	character.equip(con, user, channel, args);
         break;
     }
 }

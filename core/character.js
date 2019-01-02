@@ -229,21 +229,52 @@ async function showAll(con, userID, channel) {
 	printMessage(channel, text);
 }
 
+
+
 async function showEquip(con, user, channel) {
-	const char = await getActive(con, user.id);
-	var sql = "SELECT name FROM charEquip WHERE cNr = " + char;
-	var result = await con.query(sql);
+	
+	var text = "Equipment of **" + user.username + "**:";
+	var equip = await getEquip(con, user);
+	for (const key in equip) {
+		let value = equip[key];
 
-	if (result.length == 0) {
-		sql = "INSERT INTO charEquip (cNr, name) VALUES (" + char + ", 'base')";
+		var sql = "SELECT name FROM itemList WHERE itemID = " + value;
+		var result = await con.query(sql);
+
+		if (result.length > 0) {
+			text += "\n\t" + key + ": `" + result[0].name + "`";
+		};
+	};
+
+	printMessage(channel, text);
+}
+
+function getEquip(con, user) {
+	return new Promise(async (resolve, reject) => {
+		const char = await getActive(con, user.id);
+		var sql = "SELECT name FROM charEquip WHERE cNr = " + char;
+		var result = await con.query(sql);
+
+		if (result.length == 0) {
+			sql = "INSERT INTO charEquip (cNr, name) VALUES (" + char + ", 'base')";
+			result = await con.query(sql);
+		}
+		var equip = {};
+		var name = "";
+		sql = "SELECT handLeft, handRight, head, upperBody, lowerBody FROM charEquip WHERE cNR = " + char;
 		result = await con.query(sql);
-	}
-	var equip = {};
-	sql = "SELECT "
+		var equip = {};
+		equip["Left Hand"] = result[0].handLeft;
+		equip["Right Hand"] = result[0].handRight;
+		equip["Head"] = result[0].head;
+		equip["Upper Body"] = result[0].upperBody;
+		equip["Lower Body"] = result[0].lowerBody;
+		resolve(equip);
+	});
+}
 
-
-
-	printMessage(channel, "SHOW!")
+function equip(con, user, channel, input) {
+	printMessage(channel, "Equip something!")
 }
 
 /**
