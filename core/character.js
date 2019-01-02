@@ -242,7 +242,7 @@ async function showEquip(con, user, channel) {
 		var result = await con.query(sql);
 
 		if (result.length > 0) {
-			text += "\n\t" + key + ": `" + result[0].name + "`";
+			text += "\n\t" + getSlotName(key) + ": `" + result[0].name + "`";
 		};
 	};
 
@@ -264,17 +264,164 @@ function getEquip(con, user) {
 		sql = "SELECT handLeft, handRight, head, upperBody, lowerBody FROM charEquip WHERE cNR = " + char;
 		result = await con.query(sql);
 		var equip = {};
-		equip["Left Hand"] = result[0].handLeft;
-		equip["Right Hand"] = result[0].handRight;
-		equip["Head"] = result[0].head;
-		equip["Upper Body"] = result[0].upperBody;
-		equip["Lower Body"] = result[0].lowerBody;
+		equip[2] = result[0].handLeft;
+		equip[1] = result[0].handRight;
+		equip[4] = result[0].head;
+		equip[5] = result[0].upperBody;
+		equip[6] = result[0].lowerBody;
 		resolve(equip);
 	});
 }
 
-function equip(con, user, channel, input) {
-	printMessage(channel, "Equip something!")
+function getSlotName(slot) {
+	var name = "";
+	slot = Number(slot);
+	switch(slot) {
+		case 1:
+			name = "Right Hand";
+			break;
+		case 2:
+			name = "Left Hand";
+			break;
+		case 3:
+			name = "Both Hands";
+			break;
+		case 4:
+			name = "Head";
+			break;
+		case 5:
+			name = "Upper Body";
+			break;
+		case 6:
+			name = "Lower Body";
+			break;
+	}
+
+	return name;
+}
+
+function getSlotNameDB(slot) {
+	var name = "";
+	slot = Number(slot);
+	switch(slot) {
+		case 1:
+			name = "handRight";
+			break;
+		case 2:
+			name = "handLeft";
+			break;
+		case 3:
+			name = "both";
+			break;
+		case 4:
+			name = "head";
+			break;
+		case 5:
+			name = "upperBody";
+			break;
+		case 6:
+			name = "lowerBody";
+			break;
+	}
+}
+
+
+async function equip(con, user, channel, input) {
+
+	const inventory = require('./inventory.js');
+	var inv = await inventory.getInventory(con, user);
+
+	try {
+		var itemNumber = Number(input);
+		var itemList = {};
+		var itemIndex = 1;
+		for (const key in inv) {
+		  	let value = inv[key];
+		  	value.forEach(res => {
+		  		itemList[itemIndex] = res;
+				itemIndex++;
+		  	});
+		};
+		if (itemNumber in itemList) {
+			console.log("Item exists!")
+			var item = itemList[itemNumber];
+			var slot = item.slot;
+
+			var oldItems = [];
+			var sql = "SELECT handLeft, handRight, head, upperBody, lowerBody FROM charEquip WHERE cNr = " + item.cNr;
+			var result = await con.query(sql);
+			if (result.length > 0) {
+				let res = result[0];
+				switch(slot) {
+					case 1:
+						oldItems.push(res.handRight);
+						break;
+					case 2:
+						oldItems.push(res.leftRight);
+						break;
+					case 3:
+						oldItems.push(res.handRight);
+						oldItems.push(res.handLeft);
+						break;
+					case 4:
+						oldItems.push(res.head);
+						break;
+					case 5:
+						oldItems.push(res.upperBody);
+						break;
+					case 6:
+						oldItems.push(res.lowerBody);
+						break;
+				};
+			};
+			if (oldItems.length == 1) {
+				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[0];
+				result = await con.query(sql);
+
+				if (result.length > 0) {
+					if (result[0].name != "Nothing") {
+						printMessage(channel, "Unequipped " + result[0].name);
+					}
+				}
+			} else if(oldItems.length == 2) {
+				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[0];
+				result = await con.query(sql);
+
+				if (result.length > 0) {
+					if (result[0].name != "Nothing") {
+						var lastName = result[0].name;
+						printMessage(channel, "Unequipped " + result[0].name);
+					}
+				}
+
+				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[1];
+				result = await con.query(sql);
+
+				if (result.length > 0) {
+					if (result[0].name != "Nothing") {
+						if (lastName != result[0].name) {
+							printMessage(channel, "Unequipped " + result[0].name);
+						}
+					}
+				}
+			}
+
+			sql = "UPDATE charEquip SET handLeft = " + item.ID + ", handRight = " + item.ID + " WHERE cNr = " + item.cNr;
+			result = await con.query(sql);
+
+			console.log(result); 
+
+		} else {
+			printMessage(channel, "This item is not in your inventory!")
+		}
+	} catch(e) {
+		console.log(e);
+		console.log("Invalid Arguments!");
+	}
+}
+
+function checkRequirements(con, user, char) {
+	return true;
 }
 
 /**
@@ -315,3 +462,4 @@ module.exports.select = select;
 module.exports.showAll = showAll;
 module.exports.getActive = getActive;
 module.exports.showEquip = showEquip;
+module.exports.equip = equip;

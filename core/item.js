@@ -285,6 +285,12 @@ function generateStat(type, grade, level, modifier) {
 		case 'MagicAttack':
 			baseStatValue = 3;
 			break;
+		case 'PhysArmor':
+			baseStatValue = 2;
+			break;
+		case 'MagicalArmor':
+			baseStatValue = 1;
+			break;
 	}
 	var minStatValue = baseStatValue - (baseStatValue / 10);
 	var maxStatValue = baseStatValue + (baseStatValue / 10);
