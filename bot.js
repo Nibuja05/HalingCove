@@ -13,12 +13,12 @@ const prefix = "$$";
 client.login(auth.token);
 
 client.on('ready', () => {
-  	console.log(`Logged in as ${client.user.tag}!`);
+  	console.log(`[BOT] Logged in as ${client.user.tag}!`);
   	client.user.setActivity(prefix + " as prefix");
 });
 
 //Establish Connection to the database
-console.log("Start Connecting to DB...");
+console.log("[DB] Start connecting...");
 
 var server = auth.server;
 var database = auth.database;
@@ -35,7 +35,7 @@ var con = mysql.createConnection({
 con.connect(err => {
     if(err) throw err;
     con.query = util.promisify(con.query);
-    console.log("Connected to database!");
+    console.log("[DB] Connected!");
 });
 
 client.on('message', async msg => {
@@ -47,7 +47,6 @@ client.on('message', async msg => {
 	if (msg.author.bot) return;
 
 	const check = await checkLastCommand(msg);
-	console.log(check);
 	var confirm = check[0];
 	var newMessage = check[1];
 
@@ -58,7 +57,7 @@ client.on('message', async msg => {
 
 		userCheck(msg.author)
 
-		console.log("Executing: " + newMessage + " with " + confirm);
+		console.log("[BOT] Executing: " + newMessage + "; confirm: " + confirm);
 
 		switch(cmd) {
 		    case 'ping':
@@ -101,7 +100,7 @@ async function userCheck(user) {
     var result = await con.query(sql);
     
     if (result.length < 1) {
-        console.log("No user in DB with ID " + user.id + ". Creating new entry")
+        console.log("[DB] No user with ID " + user.id + ". Creating new entry")
         var sql = "INSERT INTO userList (userID, name) VALUES ('" + user.id + "', '" + user.username + "')";
         result = await con.query(sql);
         console.log("[DB] 1 record inserted (userList)");
@@ -128,7 +127,7 @@ function checkLastCommand(msg) {
 
 	    	//if the message is only the prefix, execute last command again
 	        if (message === prefix) {
-	            console.log("Executing command again: $$" + result[0].functionName);
+	            console.log("[BOT] Executing command again: $$" + result[0].functionName);
 	            resolve([false, prefix + result[0].functionName]);
 
 	        } else {
@@ -225,6 +224,7 @@ function manageCharacter(msg, args, confirm) {
 function manageDevCommands(msg, args, confirm) {
 
 	var item = require('./core/item.js');
+	var fight = require('./core/fight.js');
     var cmd = args[0];
     args = args.splice(1);
 
@@ -233,13 +233,21 @@ function manageDevCommands(msg, args, confirm) {
 
     switch(cmd) {
         case 'test':
-            console.log("Test!")
+            console.log("[DEV] Test!")
             break;
         case 'createRandomItem':
-            item.createRandomMultiple(con, channel, args);
+        	console.log("[DEV] 'createRadnomItem' deprecated!");
+            //item.createRandomMultiple(con, channel, args);
             break;
         case 'itemTest':
         	item.createRandom(con, channel, 10, false);
+        	break;
+        case 'testFight':
+        	fight.start(con, user, channel);
+        	break;
+        case 'emojis':
+        	const emojiList = msg.guild.emojis.map(e=>e.toString()).join(" ");
+ 			channel.send(emojiList);
         break;
     }
 }
@@ -290,6 +298,6 @@ function manageExplore(msg, args, confirm) {
 
 function printMessage(channel, text) {
 	channel.send(text)
-  	.then(message => console.log(`Sent message: ${message.content}`))
+  	.then(message => console.log(`[BOT] Sent message: ${message.content}`))
   	.catch(console.error);
 }
