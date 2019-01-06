@@ -27,8 +27,8 @@ function sendEmbed(channel, title, color, origUser, player, enemy) {
 		return client.emojis.get(id).toString();
 	}
 
-	const emoji_A = getEmojiChar("A");
-	const emoji_B = getEmojiChar("G");
+	const emoji_A = getEmojiChar("attack");
+	const emoji_B = getEmojiChar("leave");
 
 	var emojiList = [emoji_A, emoji_B];
 
@@ -44,14 +44,15 @@ function sendEmbed(channel, title, color, origUser, player, enemy) {
 
 function getReactions(message, embed, filter, emojiList, log, origUser, player, enemy) {
 	message.edit(embed)
-	.then(() => message.clearReactions())
+	//.then(() => message.clearReactions())
 	.then(() => reactWith(message, emojiList))
     .catch(() => console.error('One of the emojis failed to react.'))
 	.then(() => {
 		let collector = message.createReactionCollector(filter, { max: 1, time: 10000, errors: ['time'] });
 		var exit = false;
 
-    	collector.on('collect', reaction => {
+    	collector.on('collect',async reaction => {
+    		await reaction.remove(origUser);
     		var reactAnswer = reactTo(reaction.emoji, log, origUser, player, enemy);
     		log = reactAnswer[1];
     		exit = reactAnswer[2];
@@ -78,12 +79,12 @@ function reactTo(emoji, log, origUser, player, enemy) {
 	var text = "";
 	exit = false;
 	switch(emoji.name) {
-		case getEmojiChar("A"):
+		case getEmojiChar("attack"):
 			var attackAnswer =  attack(player, enemy, getRandomInt(1,5));
 			text = attackAnswer[0];
 			exit = attackAnswer[1];
 			break;
-		case getEmojiChar("G"):
+		case getEmojiChar("leave"):
 			text = player.toString() + " gave up!\nBattle lost.";
 			player.kill();
 			exit = true;
@@ -116,7 +117,6 @@ function getFightDescription(player, enemy, log) {
 	text += log.toString();
 	text += "<------------------------------------------------>\n\n" + visualizeHP(player) + "\n";
 	text += "⨠ " + player.toString() + playerDeath + "\n\n";
-	text += "You have following Options:\n" + " A - Attack\n G - Give Up";
 	text += "```";
 
 	return text;
@@ -203,6 +203,14 @@ function getEmojiChar(char) {
 			return "🇾";
 		case 'Z':
 			return "🇿";
+		case 'attack':
+			return "⚔";
+		case 'defend':
+			return "🛡";
+		case 'skill':
+			return "🔥"
+		case 'leave':
+			return "🏳";
 		break;
 	}
 	return "";

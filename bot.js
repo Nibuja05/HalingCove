@@ -86,6 +86,12 @@ client.on('message', async msg => {
 		    	break;
 		    case 'e':
 		    	manageExplore(msg, args, confirm);
+		    	break;
+		    case 'map':
+		    	manageMap(msg, args, confirm);
+		    	break;
+		    case 'm':
+		    	manageMap(msg, args, confirm);
 		    break;
 		}
 	}
@@ -292,6 +298,24 @@ function manageExplore(msg, args, confirm) {
         	break;
         case 'claim':
         	explore.claim(con, channel, user);
+        break;
+    }
+}
+
+function manageMap(msg, args, confirm) {
+	var map = require('./core/map.js');
+	var cmd = args[0];
+    args = args.splice(1);
+
+    var user = msg.author;
+    var channel = msg.channel;
+
+    switch(cmd) {
+        case 'show':
+        	map.show(con, channel, user);
+            break;
+        case undefined:
+        	map.show(con, channel, user);
         break;
     }
 }

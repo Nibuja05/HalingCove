@@ -40,6 +40,9 @@ class BattleLog{
 	}
 	measureElement(elem) {
 		var n = 50; //maximum line length, limited to 50
+		if (elem.length < n) {
+			return 1;
+		}
 		return elem.match(new RegExp('.{1,' + n + '}', 'g')).length;
 	}
 	/**
