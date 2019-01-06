@@ -246,7 +246,7 @@ function manageDevCommands(msg, args, confirm) {
         	fight.start(con, user, channel);
         	break;
         case 'emojis':
-        	const emojiList = msg.guild.emojis.map(e=>e.toString()).join(" ");
+        	
  			channel.send(emojiList);
         break;
     }
