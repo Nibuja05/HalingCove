@@ -16,7 +16,7 @@ async function show(con, channel, user) {
 		for (const key in inventory) {
 		  	let value = inventory[key];
 		  	let optEnding = "";
-		  	if(value.length > 1) optEnding = "s";
+		  	if(value.length > 1 && key != "Armor") optEnding = "s";
 		  	invText += "\n" + key + optEnding + ":```";
 		  	value.forEach(res => {
 		  		var tempText = "\n[" + itemIndex + "]\t" + res.count + "x " + res.itemName + " (Level " + res.level + ") ~ *" + res.itemValue + " Gold*";
@@ -42,6 +42,7 @@ function getInventory(con, user) {
 		sql += ", Itype.stat1Description, Itype.stat2Description, Item.stat1, Item.stat2, Item.value AS itemValue, Item.level"
 		sql += " FROM charList AS Cha, itemList AS Item, isInInventory AS Inv, itemType As Itype";
 		sql += " WHERE Cha.cNr = Inv.cNr AND Item.itemID = Inv.itemID AND Item.type = Itype.typeID AND Cha.cNr = " + char;
+		sql += " ORDER BY Item.itemID ASC";
 		var result = await con.query(sql);
 		
 		var categories = {};

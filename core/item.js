@@ -43,11 +43,20 @@ async function createRandom(con, channel, itemLevel, insert) {
 
 		if (insert == true) {
 			console.log("[Item] Inserting item to DB...")
-			var sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
+			var sql = "SELECT itemID FROM itemList WHERE name = '" + name + "'";
 			var result = await con.query(sql);
+			var itemID;
+
+			if (result.length == 0) {
+				sql = "INSERT INTO itemList (name, type, stat1, stat2, value, rarity, level) VALUES ('" + name + "'," + typeID + "," + stat1 + "," + stat2 + "," + value + "," + quality + ", " + level + ")";
+				result = await con.query(sql);
+				itemID = result.insertId;
+			} else {
+				itemID = result.itemID;
+			}
 
 			console.log("[DB] 1 record inserted (itemList)");
-			resolve([name, result.insertId]);
+			resolve([name, itemID]);
 		} else {
 			resolve([]);
 		}
@@ -60,16 +69,20 @@ async function createRandom(con, channel, itemLevel, insert) {
  * @param  {Connection} con   	database connection
  * @param  {string} 	input 	input string
  */
-function createRandomMultiple(con, channel, input) {
+async function createRandomMultiple(con, channel, user, input) {
 	console.log("[Item] Creating multiple items:")
 	try {
 		var amount = parseInt(input[0], 10);
 		var insert = false;
-		if (amount == 1) {
-			insert = true;
-		}
+		const inventory = require('./inventory.js');
+		const character = require('./character.js');
+		const char = await character.getActive(con, user.id);
 		for (var i = 0; i < amount; i++) {
-			createRandom(con, channel, input[1], insert);
+			var newItem = await createRandom(con, channel, input[1], true);
+			if (char != undefined) {
+				printMessage(channel, "Adding " + newItem[0] + " to your inventory!")
+				inventory.add(con, channel, user, char, newItem[1]);
+			}
 		}
 	} catch (e) {
 		console.log("Invalid Arguments");

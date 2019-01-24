@@ -296,7 +296,6 @@ function getSlotName(slot) {
 			name = "Lower Body";
 			break;
 	}
-
 	return name;
 }
 
@@ -305,23 +304,17 @@ function getSlotNameDB(slot) {
 	slot = Number(slot);
 	switch(slot) {
 		case 1:
-			name = "handRight";
-			break;
+			return "handRight";
 		case 2:
-			name = "handLeft";
-			break;
+			return "handLeft";
 		case 3:
-			name = "both";
-			break;
+			return ["handRight", "handLeft"];
 		case 4:
-			name = "head";
-			break;
+			return "head";
 		case 5:
-			name = "upperBody";
-			break;
+			return "upperBody";
 		case 6:
-			name = "lowerBody";
-			break;
+			return "lowerBody";
 	}
 }
 
@@ -374,6 +367,7 @@ async function equip(con, user, channel, input) {
 						break;
 				};
 			};
+
 			if (oldItems.length == 1) {
 				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[0];
 				result = await con.query(sql);
@@ -383,33 +377,32 @@ async function equip(con, user, channel, input) {
 						printMessage(channel, "Unequipped " + result[0].name);
 					}
 				}
+
+				var slotName = getSlotNameDB(slot);
+				sql = "UPDATE charEquip SET " + slotName + " = " + item.ID + " WHERE cNr = " + item.cNr;
+				result = await con.query(sql);
+				printMessage(channel, "Equipped " + item.itemName);
+
 			} else if(oldItems.length == 2) {
-				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[0];
+				sql = "SELECT A.name name1, B.name name2 FROM (SELECT name FROM itemList WHERE itemID = " + oldItems[0] + ") A,";
+				sql += " (SELECT name FROM itemList WHERE itemID = " + oldItems[1] + ") B";
 				result = await con.query(sql);
 
 				if (result.length > 0) {
-					if (result[0].name != "Nothing") {
-						var lastName = result[0].name;
-						printMessage(channel, "Unequipped " + result[0].name);
-					}
-				}
-
-				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[1];
-				result = await con.query(sql);
-
-				if (result.length > 0) {
-					if (result[0].name != "Nothing") {
-						if (lastName != result[0].name) {
-							printMessage(channel, "Unequipped " + result[0].name);
+					if (result[0].name1 != "Nothing") {
+						var second = "";
+						if ((result[0].name1 != result[0].name2) && (result[0].name2 != "Nothing")) {
+							second = " and " + result[0].name2;
 						}
+						printMessage(channel, "Unequipped " + result[0].name1 + second);
 					}
 				}
+
+				var slotName = getSlotNameDB(slot);
+				sql = "UPDATE charEquip SET " + slotName[0] + " = " + item.ID + ", " + slotName[1] + " = " + item.ID + " WHERE cNr = " + item.cNr;
+				result = await con.query(sql);
+				printMessage(channel, "Equipped " + item.itemName);
 			}
-
-			sql = "UPDATE charEquip SET handLeft = " + item.ID + ", handRight = " + item.ID + " WHERE cNr = " + item.cNr;
-			result = await con.query(sql);
-
-			console.log(result); 
 
 		} else {
 			printMessage(channel, "This item is not in your inventory!")

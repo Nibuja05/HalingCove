@@ -92,6 +92,9 @@ client.on('message', async msg => {
 		    	break;
 		    case 'm':
 		    	manageMap(msg, args, confirm);
+		    	break;
+		    case 'local':
+		    	manageLocal(msg, args, confirm);
 		    break;
 		}
 	}
@@ -231,6 +234,7 @@ function manageDevCommands(msg, args, confirm) {
 
 	var item = require('./core/item.js');
 	var fight = require('./core/fight.js');
+	var explore = require('./core/explore.js');
     var cmd = args[0];
     args = args.splice(1);
 
@@ -242,18 +246,13 @@ function manageDevCommands(msg, args, confirm) {
             console.log("[DEV] Test!")
             break;
         case 'createRandomItem':
-        	console.log("[DEV] 'createRadnomItem' deprecated!");
-            //item.createRandomMultiple(con, channel, args);
+            item.createRandomMultiple(con, channel, user, args);
             break;
-        case 'itemTest':
-        	item.createRandom(con, channel, 10, false);
-        	break;
         case 'testFight':
         	fight.start(con, user, channel);
         	break;
-        case 'emojis':
-        	
- 			channel.send(emojiList);
+        case 'endExplore':
+        	explore.endExplore(con, channel, user);
         break;
     }
 }
@@ -316,8 +315,22 @@ function manageMap(msg, args, confirm) {
             break;
         case undefined:
         	map.show(con, channel, user);
+        	break;
+        case 'travel':
+        	map.travelTo(con, channel, user, args);
         break;
     }
+}
+
+function manageLocal(msg, args, confirm) {
+	var map = require('./core/map.js');
+	var cmd = args[0];
+
+    var user = msg.author;
+    var channel = msg.channel;
+
+    map.showLocal(con, channel, user, args, confirm);
+
 }
 
 function printMessage(channel, text) {

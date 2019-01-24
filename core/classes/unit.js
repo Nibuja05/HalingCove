@@ -17,12 +17,6 @@ class Unit {
 	isAlive() {
 		return this.alive;
 	}
-	isPlayer() {
-		if (this.unitType == "player") {
-			return true;
-		}
-		return false;
-	}
 	isCreep() {
 		if (this.unitType == "creep") {
 			return true;
@@ -58,7 +52,7 @@ class Unit {
 		if (this.canSurvive(damage)) {
 			this.curHP = this.curHP - damage;
 		} else {
-			this.curHP = 0;
+			
 			this.alive = false;
 		}
 		return this.alive;
@@ -66,6 +60,20 @@ class Unit {
 	kill() {
 		this.alive = false;
 	}
+
+	//player specific
+	isPlayer() {
+		if (this.unitType == "player") {
+			return true;
+		}
+		return false;
+	}
+	loadPlayerData(con, player) {
+		return new Promise(async (resolve, reject) => {
+			resolve();
+		});
+	}
+
 }
 
 module.exports = Unit;

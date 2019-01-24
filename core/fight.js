@@ -1,11 +1,12 @@
 const Discord = require ('discord.js');
 
-function start(con, user, channel) {
+async function start(con, user, channel) {
 	console.log("[FT] Starting...");
 	var Unit = require('./classes/unit.js');
 
 	var player = new Unit("Rüdiger", "player", 1, "Unexperienced Adventurer", 100, 20);
-	var slime = new Unit("Slime", "creep", 1, "Figher", 20, 0);
+	await player.loadPlayerData(con, user);
+	var slime = new Unit("Slime", "creep", 1, "Fighter", 20, 0);
 
    	sendEmbed(channel, "Starting Fight...", "#660000", user.id, player, slime);
 }
@@ -27,13 +28,17 @@ function sendEmbed(channel, title, color, origUser, player, enemy) {
 		return client.emojis.get(id).toString();
 	}
 
-	const emoji_A = getEmojiChar("attack");
-	const emoji_B = getEmojiChar("leave");
+	const e1= getEmojiChar("A");
+	const e2 = getEmojiChar("B");
+	const e3 = getEmojiChar("C");
+	const e4 = getEmojiChar("D");
+	const e5 = getEmojiChar("skill");
+	const e6 = getEmojiChar("leave");
 
-	var emojiList = [emoji_A, emoji_B];
+	var emojiList = [e1, e2, e3, e4, e5, e6];
 
     const filter = (reaction, user) => {
-        return [emoji_A, emoji_B].includes(reaction.emoji.name) && user.id === origUser;
+        return emojiList.includes(reaction.emoji.name) && user.id === origUser;
     }; 
 
     channel.send(embed)
@@ -151,6 +156,26 @@ function printMessage(channel, text) {
 
 function getEmojiChar(char) {
 	switch(char) {
+		case '0':
+			return ":zero:";
+		case '1':
+			return ":one:";
+		case '2':
+			return ":two:";
+		case '3':
+			return ":three:";
+		case '4':
+			return ":four:";
+		case '5':
+			return ":five:";
+		case '6':
+			return ":six:";
+		case '7':
+			return ":seven:";
+		case '8':
+			return ":eight:";
+		case '9':
+			return ":nine:";
 		case 'A':
 			return "🇦";
 		case 'B':

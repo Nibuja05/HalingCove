@@ -47,18 +47,30 @@ async function start(con, channel, user, input, confirm) {
 
 async function status(con, channel, user) {
 
-	const rdy = await isMissionReady(con, user);
-	var difference = rdy[0];
-	var fullTimeSec = rdy[1];
-
-	if(difference < fullTimeSec) {
-		var newDiff = Math.ceil(fullTimeSec - difference);
-		printMessage(channel, "Currently on a mission, ending in " + newDiff + " seconds");
-	} else
-	{
+	var stat = await getStatus(con, user)
+	if(stat[0]) {
 		printMessage(channel, "Last Mission Complete");
+	} else {
+		var remaining = new Date(1000 * stat[1]).toISOString().substr(11, 8);
+		printMessage(channel, "Currently on a mission, ending in " + remaining);
 	}
+		
+}
 
+function getStatus(con, user) {
+	return new Promise(async (resolve, reject) => {
+		const rdy = await isMissionReady(con, user);
+		var difference = rdy[0];
+		var fullTimeSec = rdy[1];
+
+		if(difference < fullTimeSec) {
+			var newDiff = Math.ceil(fullTimeSec - difference);
+			resolve([false, newDiff]);
+		} else
+		{
+			resolve([true, 0]);
+		}
+	})
 }
 
 function isMissionReady(con, user) {
@@ -123,6 +135,19 @@ async function claim(con, channel, user) {
 				printMessage(channel, "No active exploration!")
 			}
 		}
+	}
+}
+
+async function endExplore(con, channel, user) {
+	var stat = await getStatus(con, user);
+	if (stat[0]) {
+		printMessage(channel, "No exploration active!")
+	} else {
+		var date = new Date(stat[1] * 1000);
+		var endTime = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds(); 
+			
+		sql = "UPDATE exploration EX, charList AS CH SET startTime = '" + endTime + "' WHERE EX.cNr = CH.cNr AND CH.active = 1 AND CH.userID = " + user.id;
+		
 	}
 }
 
