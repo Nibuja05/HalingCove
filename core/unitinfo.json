@@ -1,0 +1,26 @@
+{
+	"player" : {
+		"Unexperienced Adventurer" : {
+			"BaseHP" : "50",
+			"BaseMana" : "10",
+			"Skills" : [
+			]
+		}
+	},
+	"creep" : {
+		"Slime" : {
+			"BaseHP" : "10",
+			"BaseMana" : "0",
+			"Attack" : "1",
+			"MovePattern" : "Figher",
+			"AttackPattern" : [
+				"Middle",
+				"Low"
+			],
+			"DefendPattern" : [
+			],
+			"Skills" : [
+			]
+		}
+	}
+}

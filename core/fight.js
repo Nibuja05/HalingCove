@@ -4,11 +4,21 @@ async function start(con, user, channel) {
 	console.log("[FT] Starting...");
 	var Unit = require('./classes/unit.js');
 
-	var player = new Unit("Rüdiger", "player", 1, "Unexperienced Adventurer", 100, 20);
-	await player.loadPlayerData(con, user);
-	var slime = new Unit("Slime", "creep", 1, "Fighter", 20, 0);
+	//var player = new Unit("Rüdiger", "player", 1, "Unexperienced Adventurer", 100, 20);
+	//await player.loadPlayerData(con, user);
+	var player = new Unit();
+	await player.initPlayer(con, user);
+	var slime = new Unit();
+	slime.initCreep("Slime", 1);
 
    	sendEmbed(channel, "Starting Fight...", "#660000", user.id, player, slime);
+}
+
+async function test(con, user, channel) {
+	var Unit = require('./classes/unit.js');
+
+	var player = new Unit();
+	await player.initCreep("Slime", 1);
 }
 
 function sendEmbed(channel, title, color, origUser, player, enemy) {
@@ -115,7 +125,7 @@ function getFightDescription(player, enemy, log) {
 	var playerDeath = "";
 	if (!player.isAlive()) {playerDeath = " ☠";}
 
-	var text = "Watch out for this epic battle between `" + player.toString() + "` and `" + enemy.toString() + "`!";
+	var text = "Watch out for this epic battle between `" + player.toString() + "` and `" + enemy.toString() + "`            !";
 	text += "\n```";
 	text += visualizeHP(enemy) + "\n";
 	text += "⨠ " + enemy.toString() + enemyDeath + "\n\n<------------------------------------------------>\n";
@@ -248,3 +258,4 @@ function getRandomInt(min, max) {
 }
 
 module.exports.start = start;
+module.exports.test = test;

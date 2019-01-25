@@ -456,3 +456,4 @@ module.exports.showAll = showAll;
 module.exports.getActive = getActive;
 module.exports.showEquip = showEquip;
 module.exports.equip = equip;
+module.exports.getEquip = getEquip;
