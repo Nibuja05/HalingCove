@@ -42,76 +42,141 @@ function sendEmbed(channel, title, color, origUser, player, enemy) {
 	const e2 = getEmojiChar("B");
 	const e3 = getEmojiChar("C");
 	const e4 = getEmojiChar("D");
-	const e5 = getEmojiChar("skill");
-	const e6 = getEmojiChar("leave");
+	const e5 = getEmojiChar("M");
+	const e6 = getEmojiChar("skill");
+	const e7 = getEmojiChar("leave");
 
-	var emojiList = [e1, e2, e3, e4, e5, e6];
+	var emojiList = [e1, e2, e3, e4, e5, e6, e7];
 
     const filter = (reaction, user) => {
         return emojiList.includes(reaction.emoji.name) && user.id === origUser;
     }; 
 
+    var turn = "player";
+
     channel.send(embed)
-    .then(function (message) {
-    	getReactions(message, embed, filter, emojiList, log, origUser, player, enemy);
-    });
+    .then((message) => {
+    	reactWith(message, emojiList);
+    	getReactions(message, embed, filter, log, origUser, player, enemy, turn);
+    })
+    .catch(() => console.error('One of the emojis failed to react.'))
 }
 
-function getReactions(message, embed, filter, emojiList, log, origUser, player, enemy) {
+function getReactions(message, embed, filter, log, origUser, player, enemy, turn) {
 	message.edit(embed)
 	//.then(() => message.clearReactions())
-	.then(() => reactWith(message, emojiList))
-    .catch(() => console.error('One of the emojis failed to react.'))
 	.then(() => {
 		let collector = message.createReactionCollector(filter, { max: 1, time: 10000, errors: ['time'] });
 		var exit = false;
 
-    	collector.on('collect',async reaction => {
-    		await reaction.remove(origUser);
-    		var reactAnswer = reactTo(reaction.emoji, log, origUser, player, enemy);
+		console.log("Ready");
+		var lastReaction;
+    	collector.on('collect', reaction => {
+    		console.log("react");
+    		lastReaction = reaction;
+    		var reactAnswer = reactTo(reaction.emoji, log, origUser, player, enemy, turn);
     		log = reactAnswer[1];
     		exit = reactAnswer[2];
+    		turn = reactAnswer[3];
 
     		embed.setDescription(reactAnswer[0]);
+    		message.edit(embed);
+    		collector.stop();
+
     		if (exit) {
-    			message.edit(embed);
-    		}
-    	});
-    	collector.on('end', collected => {
-    		if (collected.size > 0 && exit == false) {
-    			getReactions(message, embed, filter, emojiList, log, origUser, player, enemy);
-    		} else {
     			var newEmbed = embed;
     			newEmbed.setDescription(embed.description + "\n\n -> The Battle is Over! <-");
     			message.edit(embed);
     			message.clearReactions();
     		}
     	});
+    	collector.on('end',async collected => {
+    		if (collected.size > 0 && exit == false) {
+    			if (lastReaction != undefined) {
+    				await lastReaction.remove(origUser);
+    			}
+    			getReactions(message, embed, filter, log, origUser, player, enemy, turn);
+    		}
+    	});
 	})
 }
 
-function reactTo(emoji, log, origUser, player, enemy) {
+function reactTo(emoji, log, origUser, player, enemy, turn) {
 	var text = "";
 	exit = false;
+
+	var actionList = [];
+	if (turn == "player") {
+		actionList = player.getAttackActions();
+	} else {
+		actionList = player.getDefendActions();
+	}
+
 	switch(emoji.name) {
-		case getEmojiChar("attack"):
-			var attackAnswer =  attack(player, enemy, getRandomInt(1,5));
-			text = attackAnswer[0];
-			exit = attackAnswer[1];
+		case getEmojiChar("A"):
+			if (actionList[0] != undefined) {
+				var attackAnswer = attack(player, enemy, actionList[0]);
+				text = attackAnswer[0];
+				exit = attackAnswer[1];
+			} else {
+				text = "Action not avaliable!";
+			}
+			break;
+		case getEmojiChar("B"):
+			if (actionList[1] != undefined) {
+				var attackAnswer = attack(player, enemy, actionList[1]);
+				text = attackAnswer[0];
+				exit = attackAnswer[1];
+			} else {
+				text = "Action not avaliable!";
+			}
+			break;
+		case getEmojiChar("C"):
+			if (actionList[2] != undefined) {
+				var attackAnswer = attack(player, enemy, actionList[2]);
+				text = attackAnswer[0];
+				exit = attackAnswer[1];
+			} else {
+				text = "Action not avaliable!";
+			}
+			break;
+		case getEmojiChar("D"):
+			if (actionList[3] != undefined) {
+				var attackAnswer = attack(player, enemy, actionList[3]);
+				text = attackAnswer[0];
+				exit = attackAnswer[1];
+			} else {
+				text = "Action not avaliable!";
+			}
+			break;
+		case getEmojiChar("M"):
+			text = "Moved. Somewhere. Nobody knows. But your still there. Hmm..."
+			exit = false;
+			break;
+		case getEmojiChar("skill"):
+			text = "You want to use your incredibly overpowered magic spell! But you dont have enough mana..."
+			exit = false;
 			break;
 		case getEmojiChar("leave"):
-			text = player.toString() + " gave up!\nBattle lost.";
-			player.kill();
+			text = player.toString() + " ran away from the fight like a coword!"
 			exit = true;
 			break;
 	}
+
 	log.add(text);
-	return [getFightDescription(player, enemy, log), log, exit];
+
+	if (turn == "player") {
+		turn = "player";
+	} else {
+		turn = "player";
+	}
+	return [getFightDescription(player, enemy, log), log, exit, turn];
 }
 
-function attack(attacker, victim, damage) {
+function attack(attacker, victim, option) {
+	var damage = 1;
 	if (victim.dealDamage(damage)) {
-		var text = attacker.toString() + " attacked " + victim.toString() + " and dealt " + damage + " damage!";
+		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + damage + " damage!";
 		return [text, false];
 	} else {
 		var text = "You killed " + victim.toString() + "!\nBattle won.";
@@ -132,9 +197,29 @@ function getFightDescription(player, enemy, log) {
 	text += log.toString();
 	text += "<------------------------------------------------>\n\n" + visualizeHP(player) + "\n";
 	text += "⨠ " + player.toString() + playerDeath + "\n\n";
+	text += getUnitOptions(player, "attack");
 	text += "```";
 
 	return text;
+}
+
+function getUnitOptions(unit, type) {
+	var actions = [];
+	var symbols = ['A', 'B', 'C', 'D'];
+	if (type == "attack") {
+		actions = unit.getAttackActions();
+	} else if (type == "defend") {
+		actions = unit.getDefendActions();
+	}
+	if (actions.length > 0) {
+		var text = "\nYour Actions:\n";
+		actions.forEach((x, index) => {
+			text += " -" + symbols[index] + ": Attack " + x + "\n";
+		});
+		return text;
+	} else {
+		return "";
+	}
 }
 
 function visualizeHP(unit) {

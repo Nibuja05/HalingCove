@@ -8,6 +8,8 @@ function getActionsFromItem(item) {
 				return ["High", "Middle"];
 			case 'Swordlike':
 				return ["High", "Left", "Right", "Low"];
+			case 'Spear':
+				return ["High", "Middle", "Low"];
 			case 'Shield':
 				return ["High", "Left", "Right", "Low"];
 			break;

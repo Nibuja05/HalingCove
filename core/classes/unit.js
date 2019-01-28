@@ -134,13 +134,17 @@ class Unit {
 	kill() {
 		this.alive = false;
 	}
-
-	//player specific
 	isPlayer() {
 		if (this.unitType == "player") {
 			return true;
 		}
 		return false;
+	}
+	getAttackActions() {
+		return this.attackActions;
+	}
+	getDefendActions() {
+		return this.defendActions;
 	}
 
 }
