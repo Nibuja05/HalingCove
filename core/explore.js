@@ -146,8 +146,10 @@ async function endExplore(con, channel, user) {
 		var date = new Date(stat[1] * 1000);
 		var endTime = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds(); 
 			
-		sql = "UPDATE exploration EX, charList AS CH SET startTime = '" + endTime + "' WHERE EX.cNr = CH.cNr AND CH.active = 1 AND CH.userID = " + user.id;
-		
+		var sql = "UPDATE exploration EX, charList AS CH SET startTime = '" + endTime + "' WHERE EX.cNr = CH.cNr AND CH.active = 1 AND CH.userID = " + user.id;
+		var result = await con.query(sql);
+
+		status(con, channel, user);
 	}
 }
 
@@ -170,3 +172,4 @@ module.exports.help = help;
 module.exports.status = status;
 module.exports.claim = claim;
 module.exports.getStatus = getStatus;
+module.exports.endExplore = endExplore;

@@ -336,11 +336,12 @@ async function equip(con, user, channel, input) {
 		  	});
 		};
 		if (itemNumber in itemList) {
-			console.log("Item exists!")
+			console.log("[IT] Item exists!")
 			var item = itemList[itemNumber];
 			var slot = item.slot;
 
 			var oldItems = [];
+			var optItem;
 			var sql = "SELECT handLeft, handRight, head, upperBody, lowerBody FROM charEquip WHERE cNr = " + item.cNr;
 			var result = await con.query(sql);
 			if (result.length > 0) {
@@ -348,9 +349,11 @@ async function equip(con, user, channel, input) {
 				switch(slot) {
 					case 1:
 						oldItems.push(res.handRight);
+						optItem = "handLeft";
 						break;
 					case 2:
-						oldItems.push(res.leftRight);
+						oldItems.push(res.handLeft);
+						optItem = "handRight";
 						break;
 					case 3:
 						oldItems.push(res.handRight);
@@ -369,7 +372,7 @@ async function equip(con, user, channel, input) {
 			};
 
 			if (oldItems.length == 1) {
-				sql = "SELECT name FROM itemList WHERE itemID = " + oldItems[0];
+				sql = "SELECT Item.name, IType.slot FROM itemList Item, itemType IType WHERE Item.type = IType.typeID AND Item.itemID = " + oldItems[0];
 				result = await con.query(sql);
 
 				if (result.length > 0) {
@@ -380,8 +383,16 @@ async function equip(con, user, channel, input) {
 
 				var slotName = getSlotNameDB(slot);
 				sql = "UPDATE charEquip SET " + slotName + " = " + item.ID + " WHERE cNr = " + item.cNr;
-				result = await con.query(sql);
+				await con.query(sql);
 				printMessage(channel, "Equipped " + item.itemName);
+
+				console.log(result[0].slot);
+				if (result[0].slot == 3) {
+					console.log("OPT ITEM")
+					sql = "UPDATE charEquip SET " + optItem + " = " + 2 + " WHERE cNr = " + item.cNr;
+					console.log(sql);
+					result = await con.query(sql);
+				}
 
 			} else if(oldItems.length == 2) {
 				sql = "SELECT A.name name1, B.name name2 FROM (SELECT name FROM itemList WHERE itemID = " + oldItems[0] + ") A,";

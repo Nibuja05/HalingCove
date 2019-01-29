@@ -12,6 +12,8 @@ function getActionsFromItem(item) {
 				return ["High", "Middle", "Low"];
 			case 'Shield':
 				return ["High", "Left", "Right", "Low"];
+			case 'Magic':
+				return ["Middle"];
 			break;
 		}
 	}
