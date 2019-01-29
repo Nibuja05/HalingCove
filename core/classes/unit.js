@@ -14,31 +14,19 @@ class Unit {
 			var defendCount = 4;
 			var attackActions = [];
 			var defendActions = [];
+			this.weapons = [];
 			for (const key in equip) {
 				let value = equip[key];
 				var item = await helper.getItemByID(con, value);
-				if (item.slot == 1) {
-					console.log("1:")
-					var actions = helper.getActionsFromItem(item);
-					attackCount -= actions.length;
-					attackActions = actions;
-				}
-				if ((item.slot == 2 || item.slot == 0) && attackCount > 0) {
-					console.log("0 or 2:")
-					var actions = helper.getActionsFromItem(item);
-					if (item.category == 'Weapon') {
-						actions = actions.filter(x => !attackActions.includes(x));
-						if (attackCount - actions.length >= 0) {
-							attackActions = attackActions.concat(actions);
-						}
-					} else {
-						actions = actions.filter(x => !defendActions.includes(x));
-						if (defendCount - actions.length >= 0) {
-							defendActions = defendActions.concat(actions);
-						}
-					}
-				}
+				this.addWeapon(key, item);
 			};
+			this.weapons.forEach(item => {
+				var actions = helper.getActionsFromItem(item);
+				actions = actions.filter(x => !attackActions.includes(x));
+				if (attackCount - actions.length >= 0) {
+					attackActions = attackActions.concat(actions);
+				}
+			})
 
 			var sql = "SELECT name AS charName, level, class AS charClass, modifiers FROM charList WHERE active = 1 AND userID = " + user.id;
 			var result = await con.query(sql);
@@ -61,6 +49,7 @@ class Unit {
 
 		var hp = this.calculateStartHP(unitInfo.BaseHP, false);
 		var mana = this.calculateStartMana(unitInfo.BaseMana, false);
+		this.creepDamage = [Number(unitInfo.PhysAttack), Number(unitInfo.MagicAttack), Number(unitInfo.PureAttack)];
 		this.setVals(name, "creep", level, unitInfo.MovePattern, hp, mana, unitInfo.AttackPattern, unitInfo.DefendPattern)
 	}
 	calculateStartHP(baseHP, isPlayer) {
@@ -85,6 +74,19 @@ class Unit {
 		this.attackActions = attackActions;
 		this.defendActions = defendActions;
 	}
+	addWeapon(slot, item) {
+		if (slot == 1) {
+			if (item.slot == 1 || item.slot == 0 || item.slot == 3) {
+				this.weapons.push(item);
+			}
+		} else if (slot == 2) {
+			if (item.slot == 2) {
+				this.weapons.push(item);
+			} else {
+				console.log("[U] Dual wielding!")
+			}
+		}
+	}
 	toString() {
 		return this.unitName + " (lvl " + this.level + ")";
 	}
@@ -102,6 +104,9 @@ class Unit {
 			return true;
 		}
 		return false;
+	}
+	getClass() {
+		return this.unitClass;
 	}
 	canSurvive(damage) {
 		if ((this.curHP - damage) > 0) {
@@ -122,14 +127,19 @@ class Unit {
 		}
 		return false;
 	}
-	dealDamage(damage) {
-		if (this.canSurvive(damage)) {
-			this.curHP = this.curHP - damage;
+	//returns the true damage the unit received after all reductions
+	dealDamage(damageTable) {
+		var damage = damageTable.damage;
+		var attacker = damageTable.attacker;
+		var range = damageTable.range;
+		var damageSum = damage[0] +  damage[1] +  damage[2]
+		if (this.canSurvive(damageSum)) {
+			this.curHP = this.curHP - damageSum;
 		} else {
-			
+			this.curHP = 0;
 			this.alive = false;
 		}
-		return this.alive;
+		return damageSum;
 	}
 	kill() {
 		this.alive = false;
@@ -146,7 +156,54 @@ class Unit {
 	getDefendActions() {
 		return this.defendActions;
 	}
+	//returns a damage Table (Phys / Magic / Pure)
+	getAttackDamage() {
+		//get base damage from weapons
+		var damage = [0, 0, 0];
+		if (this.isPlayer()) {
+			if (this.weapons.length > 0) {
+				this.weapons.forEach(item => {
+					var statType = item.stat1Description;
+					if (statType == "PhysAttack") {
+						damage[0] += item.stat1;
+					} else if (statType == "MagicAttack") {
+						damage[1] += item.stat1;
+					} else if (statType == "PureAttack") {
+						damage[2] += item.stat1;
+					}
+					var statType = item.stat2Description;
+					if (statType == "PhysAttack") {
+						damage[0] += item.stat2;
+					} else if (statType == "MagicAttack") {
+						damage[1] += item.stat2;
+					} else if (statType == "PureAttack") {
+						damage[2] += item.stat2;
+					}
+				});
+			}
+		} else {
+			damage = this.creepDamage;
+		}
+		//add damage variation of 25% (ceil)
+		damage.forEach((dmg, index) => {
+			if (dmg != 0) {
+				var value = Math.ceil(dmg / 4);
+				if (value < 1) value = 1;
+				var variation = getRandomInt(-value, value);
+				damage[index] += variation;
+				if (damage[index] < 1) {
+					damage[index] = 0;
+				}
+			}
+		})
+		return damage;
+	}
+}
 
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 module.exports = Unit;

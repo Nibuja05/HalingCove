@@ -18,14 +18,14 @@ async function test(con, user, channel) {
 	var Unit = require('./classes/unit.js');
 
 	var player = new Unit();
-	await player.initCreep("Slime", 1);
+	await player.initPlayer(con, user);
 }
 
 function sendEmbed(channel, title, color, origUser, player, enemy) {
 
 	const helper = require('./classes/helper.js')
 	var log = new helper.BattleLog(10);
-	var description = getFightDescription(player, enemy, log)
+	var description = getFightDescription(player, enemy, log, "player")
 
 	var embed = new Discord.RichEmbed()
     .setTitle(title)
@@ -69,11 +69,7 @@ function getReactions(message, embed, filter, log, origUser, player, enemy, turn
 		let collector = message.createReactionCollector(filter, { max: 1, time: 10000, errors: ['time'] });
 		var exit = false;
 
-		console.log("Ready");
-		var lastReaction;
-    	collector.on('collect', reaction => {
-    		console.log("react");
-    		lastReaction = reaction;
+    	collector.on('collect',async reaction => {
     		var reactAnswer = reactTo(reaction.emoji, log, origUser, player, enemy, turn);
     		log = reactAnswer[1];
     		exit = reactAnswer[2];
@@ -89,13 +85,16 @@ function getReactions(message, embed, filter, log, origUser, player, enemy, turn
     			message.edit(embed);
     			message.clearReactions();
     		}
+    		await reaction.remove(origUser);
     	});
-    	collector.on('end',async collected => {
+    	collector.on('end', collected => {
     		if (collected.size > 0 && exit == false) {
-    			if (lastReaction != undefined) {
-    				await lastReaction.remove(origUser);
-    			}
     			getReactions(message, embed, filter, log, origUser, player, enemy, turn);
+    		} else if (exit == false) {
+    			var newEmbed = embed;
+    			newEmbed.setDescription(embed.description + "\n\n -> The Battle is Over! <-");
+    			message.edit(embed);
+    			message.clearReactions();
     		}
     	});
 	})
@@ -106,85 +105,116 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 	exit = false;
 
 	var actionList = [];
+	var validInput = false;
 	if (turn == "player") {
 		actionList = player.getAttackActions();
 	} else {
 		actionList = player.getDefendActions();
 	}
 
-	switch(emoji.name) {
-		case getEmojiChar("A"):
-			if (actionList[0] != undefined) {
-				var attackAnswer = attack(player, enemy, actionList[0]);
-				text = attackAnswer[0];
-				exit = attackAnswer[1];
-			} else {
-				text = "Action not avaliable!";
-			}
-			break;
-		case getEmojiChar("B"):
-			if (actionList[1] != undefined) {
-				var attackAnswer = attack(player, enemy, actionList[1]);
-				text = attackAnswer[0];
-				exit = attackAnswer[1];
-			} else {
-				text = "Action not avaliable!";
-			}
-			break;
-		case getEmojiChar("C"):
-			if (actionList[2] != undefined) {
-				var attackAnswer = attack(player, enemy, actionList[2]);
-				text = attackAnswer[0];
-				exit = attackAnswer[1];
-			} else {
-				text = "Action not avaliable!";
-			}
-			break;
-		case getEmojiChar("D"):
-			if (actionList[3] != undefined) {
-				var attackAnswer = attack(player, enemy, actionList[3]);
-				text = attackAnswer[0];
-				exit = attackAnswer[1];
-			} else {
-				text = "Action not avaliable!";
-			}
-			break;
-		case getEmojiChar("M"):
-			text = "Moved. Somewhere. Nobody knows. But your still there. Hmm..."
-			exit = false;
-			break;
-		case getEmojiChar("skill"):
-			text = "You want to use your incredibly overpowered magic spell! But you dont have enough mana..."
-			exit = false;
-			break;
-		case getEmojiChar("leave"):
-			text = player.toString() + " ran away from the fight like a coword!"
-			exit = true;
-			break;
-	}
-
-	log.add(text);
-
-	if (turn == "player") {
-		turn = "player";
+	if (actionList.length < 1) {
+		text = "Passing...";
+		validInput = true;
 	} else {
-		turn = "player";
+		switch(emoji.name) {
+			case getEmojiChar("A"):
+				if (actionList[0] != undefined) {
+					var attackAnswer = attack(player, enemy, actionList[0]);
+					text = attackAnswer[0];
+					exit = attackAnswer[1];
+					validInput = true;
+				} else {
+					text = "Action not avaliable!";
+				}
+				break;
+			case getEmojiChar("B"):
+				if (actionList[1] != undefined) {
+					var attackAnswer = attack(player, enemy, actionList[1]);
+					text = attackAnswer[0];
+					exit = attackAnswer[1];
+					validInput = true;
+				} else {
+					text = "Action not avaliable!";
+				}
+				break;
+			case getEmojiChar("C"):
+				if (actionList[2] != undefined) {
+					var attackAnswer = attack(player, enemy, actionList[2]);
+					text = attackAnswer[0];
+					exit = attackAnswer[1];
+					validInput = true;
+				} else {
+					text = "Action not avaliable!";
+				}
+				break;
+			case getEmojiChar("D"):
+				if (actionList[3] != undefined) {
+					var attackAnswer = attack(player, enemy, actionList[3]);
+					text = attackAnswer[0];
+					exit = attackAnswer[1];
+					validInput = true;
+				} else {
+					text = "Action not avaliable!";
+				}
+				break;
+			case getEmojiChar("M"):
+				text = "Moved. Somewhere. Nobody knows. But your still there. Hmm..."
+				exit = false;
+				break;
+			case getEmojiChar("skill"):
+				text = "You want to use your incredibly overpowered magic spell! But you dont have enough mana..."
+				exit = false;
+				break;
+			case getEmojiChar("leave"):
+				text = player.toString() + " ran away from the fight like a coword!"
+				exit = true;
+				break;
+		}
 	}
-	return [getFightDescription(player, enemy, log), log, exit, turn];
+
+	if (validInput == true) {
+		if (turn == "player") {
+			turn = "enemy";
+		} else {
+			var enemyAnswer = enemyTurn(enemy, player);
+			text += "\n" + enemyAnswer[0];
+			exit = enemyAnswer[1];
+			turn = "player";
+		}
+	}
+	log.add(text);
+	return [getFightDescription(player, enemy, log, turn), log, exit, turn];
+}
+
+function enemyTurn(creep, player) {
+	var pattern = creep.getClass();
+	var attackActions = creep.getAttackActions();
+	var attackOption = getRandomElement(attackActions);
+	var text = "";
+	switch(pattern) {
+		case 'Fighter':
+			return attack(creep, player, attackOption);
+	}
+	return ["", false];
 }
 
 function attack(attacker, victim, option) {
-	var damage = 1;
-	if (victim.dealDamage(damage)) {
-		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + damage + " damage!";
+	var damageTable = {};
+	damageTable.attacker = attacker;
+	damageTable.range = 1;
+	damageTable.damage = attacker.getAttackDamage();
+	var trueDamage = victim.dealDamage(damageTable);
+	if (victim.isAlive()) {
+		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + trueDamage + " damage!";
 		return [text, false];
 	} else {
-		var text = "You killed " + victim.toString() + "!\nBattle won.";
+		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + trueDamage + " damage!";
+		text += "\n" + attacker.toString() + " killed " + victim.toString() + "!\nBattle end.";
 		return [text, true];
 	}
 }
 
-function getFightDescription(player, enemy, log) {
+function getFightDescription(player, enemy, log, turn) {
 	var enemyDeath = "";
 	if (!enemy.isAlive()) {enemyDeath = " ☠";}
 	var playerDeath = "";
@@ -197,7 +227,12 @@ function getFightDescription(player, enemy, log) {
 	text += log.toString();
 	text += "<------------------------------------------------>\n\n" + visualizeHP(player) + "\n";
 	text += "⨠ " + player.toString() + playerDeath + "\n\n";
-	text += getUnitOptions(player, "attack");
+	if (turn == "player") {
+		text += "It's your turn!\n" + getUnitOptions(player, "attack");
+	} else {
+		text += "It's the enemies turn!\n" + getUnitOptions(player, "defend");
+	}
+	
 	text += "```";
 
 	return text;
@@ -206,19 +241,31 @@ function getFightDescription(player, enemy, log) {
 function getUnitOptions(unit, type) {
 	var actions = [];
 	var symbols = ['A', 'B', 'C', 'D'];
+	var text = "";
+	var wording = "";
 	if (type == "attack") {
 		actions = unit.getAttackActions();
+		text += "Your Attack Actions:\n";
+		wording = "Attack";
 	} else if (type == "defend") {
 		actions = unit.getDefendActions();
+		text += "Your Defend Actions:\n";
+		wording = "Defend";
 	}
 	if (actions.length > 0) {
-		var text = "\nYour Actions:\n";
-		actions.forEach((x, index) => {
-			text += " -" + symbols[index] + ": Attack " + x + "\n";
+		symbols.forEach((x, index) => {
+			if (actions[index] != undefined) {
+				text += " - " + x + ": " + wording + " " + actions[index] + "\n";
+			} else {
+				text += " - " + x + ": Nothing\n";
+			}
 		});
 		return text;
 	} else {
-		return "";
+		symbols.forEach((x, index) => {
+			text += " - " + x + ": Pass\n";
+		});
+		return text;
 	}
 }
 
@@ -231,7 +278,7 @@ function visualizeHP(unit) {
 	for (var i = blockCount; i < 25; i++) {
 		text += "·";
 	}
-	text += "⦌";
+	text += "⦌ " + unit.curHP + "/" + unit.maxHP;
 	return text;
 }
 
@@ -247,6 +294,11 @@ function printMessage(channel, text) {
 	channel.send(text)
 	.then(message => console.log(`Sent message: ${message.content}`))
 	.catch(console.error);
+}
+
+function getRandomElement(arr) {
+	var max = arr.length - 1;
+	return arr[getRandomInt(0,max)];
 }
 
 function getEmojiChar(char) {

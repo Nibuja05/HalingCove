@@ -11,8 +11,10 @@
 		"Slime" : {
 			"BaseHP" : "10",
 			"BaseMana" : "0",
-			"Attack" : "1",
-			"MovePattern" : "Figher",
+			"PhysAttack" : "1",
+			"MagicAttack" : "0",
+			"PureAttack" : "0",
+			"MovePattern" : "Fighter",
 			"AttackPattern" : [
 				"Middle",
 				"Low"

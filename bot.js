@@ -186,7 +186,7 @@ function checkLastCommand(msg) {
 	            result = await con.query(sql);
 
 	            console.log("[DB] 1 record inserted (lastCommand)");
-	            return callback(false, message);
+	            resolve(false, message);
 	        }
 	    }
 	});
@@ -253,6 +253,9 @@ function manageDevCommands(msg, args, confirm) {
         	break;
         case 'endExplore':
         	explore.endExplore(con, channel, user);
+        	break;
+        case 'playerTest':
+        	fight.test(con, user, channel);
         break;
     }
 }

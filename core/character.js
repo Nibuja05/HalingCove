@@ -264,8 +264,8 @@ function getEquip(con, user) {
 		sql = "SELECT handLeft, handRight, head, upperBody, lowerBody FROM charEquip WHERE cNR = " + char;
 		result = await con.query(sql);
 		var equip = {};
-		equip[2] = result[0].handLeft;
 		equip[1] = result[0].handRight;
+		equip[2] = result[0].handLeft;
 		equip[4] = result[0].head;
 		equip[5] = result[0].upperBody;
 		equip[6] = result[0].lowerBody;

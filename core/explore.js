@@ -169,3 +169,4 @@ module.exports.start = start;
 module.exports.help = help;
 module.exports.status = status;
 module.exports.claim = claim;
+module.exports.getStatus = getStatus;
