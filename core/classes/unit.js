@@ -74,6 +74,15 @@ class Unit {
 		this.attackActions = attackActions;
 		this.defendActions = defendActions;
 	}
+	getName() {
+		return this.unitName;
+	}
+	setName(name) {
+		if (!this.modifiedName) {
+			this.modifiedName = true;
+			this.unitName = name;
+		}		
+	}
 	addWeapon(slot, item) {
 		if (slot == 1) {
 			if (item.slot == 1 || item.slot == 0 || item.slot == 3) {

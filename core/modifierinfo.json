@@ -1,0 +1,13 @@
+{
+	"modifier_fortify" : {
+		"Debuff" : "0",
+		"Purgeable" : "0",
+		"Events" : [
+		],
+		"Bonuses" : [
+			{
+				"Armor" : 
+			}
+		]
+	}
+}

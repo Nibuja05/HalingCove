@@ -2,18 +2,88 @@
 	"player" : {
 		"Unexperienced Adventurer" : {
 			"BaseHP" : "50",
+			"BaseMana" : "0",
+			"Class" : "None",
+			"Skills" : {
+				"Active" : {
+				},
+				"Passive" : {		
+				}
+			}
+		},
+		"Backup Guard" : {
+			"BaseHP" : "75",
 			"BaseMana" : "10",
-			"Skills" : [
-			]
-		}
+			"Class" : "Defender",
+			"Skills" : {
+				"Active" : {
+					"Fortify" : "1"
+				},
+				"Passive" : {		
+					"Parry" : "1"
+				}
+			}
+		},
+		"Road Thief" : {
+			"BaseHP" : "50",
+			"BaseMana" : "20",
+			"Class" : "Assasin",
+			"Skills" : {
+				"Active" : {
+					"Blade Poison" : "1"
+				},
+				"Passive" : {		
+					"Hidden" : "1"
+				}
+			}
+		},
+		"Magic Pupil" : {
+			"BaseHP" : "40",
+			"BaseMana" : "40",
+			"Class" : "Mage",
+			"Skills" : {
+				"Active" : {
+					"Spark" : "1",
+					"Disarm" : "1"
+				},
+				"Passive" : {	
+					"Distance" : "1"	
+				}
+			}
+		},
+		"Daredevils" : {
+			"BaseHP" : "90",
+			"BaseMana" : "0",
+			"Class" : "Warrior",
+			"Skills" : {
+				"Active" : {
+				},
+				"Passive" : {	
+					"Durable" : "1"
+				}
+			}
+		},
+		"Poacher" : {
+			"BaseHP" : "50",
+			"BaseMana" : "0",
+			"Class" : "Hunter",
+			"Skills" : {
+				"Active" : {
+				},
+				"Passive" : {	
+					"Distance" : "2"
+				}
+			}
+		},
 	},
 	"creep" : {
-		"Slime" : {
+		"Rat" : {
 			"BaseHP" : "10",
 			"BaseMana" : "0",
 			"PhysAttack" : "1",
 			"MagicAttack" : "0",
 			"PureAttack" : "0",
+			"GrowSpeed" : "1",
 			"MovePattern" : "Fighter",
 			"AttackPattern" : [
 				"Middle",
@@ -21,8 +91,34 @@
 			],
 			"DefendPattern" : [
 			],
-			"Skills" : [
-			]
+			"Skills" : {
+				"Active" : {
+				},
+				"Passive" : {		
+				}
+			}
+		},
+		"Slime" : {
+			"BaseHP" : "25",
+			"BaseMana" : "0",
+			"PhysAttack" : "2",
+			"MagicAttack" : "0",
+			"PureAttack" : "0",
+			"GrowSpeed" : "1",
+			"MovePattern" : "Fighter",
+			"AttackPattern" : [
+				"Middle",
+				"Low"
+			],
+			"DefendPattern" : [
+			],
+			"Skills" : {
+				"Active" : {
+				},
+				"Passive" : {		
+					"Flabby" : "1"
+				}
+			}
 		}
 	}
 }

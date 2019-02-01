@@ -10,8 +10,10 @@ async function start(con, user, channel) {
 	await player.initPlayer(con, user);
 	var slime = new Unit();
 	slime.initCreep("Slime", 1);
+	var slime2 = new Unit();
+	slime2.initCreep("Slime", 1);
 
-   	sendEmbed(channel, "Starting Fight...", "#660000", user.id, player, slime);
+   	sendEmbed(channel, "Starting Fight...", "#660000", user.id, player, [slime, slime2]);
 }
 
 async function test(con, user, channel) {
@@ -21,11 +23,11 @@ async function test(con, user, channel) {
 	await player.initPlayer(con, user);
 }
 
-function sendEmbed(channel, title, color, origUser, player, enemy) {
+function sendEmbed(channel, title, color, origUser, player, enemies) {
 
 	const helper = require('./classes/helper.js')
 	var log = new helper.BattleLog(10);
-	var description = getFightDescription(player, enemy, log, "player")
+	var description = getFightDescription(player, enemies, log, "player")
 
 	var embed = new Discord.RichEmbed()
     .setTitle(title)
@@ -57,12 +59,12 @@ function sendEmbed(channel, title, color, origUser, player, enemy) {
     channel.send(embed)
     .then((message) => {
     	reactWith(message, emojiList);
-    	getReactions(message, embed, filter, log, origUser, player, enemy, turn);
+    	getReactions(message, embed, filter, log, origUser, player, enemies, turn);
     })
     .catch(() => console.error('One of the emojis failed to react.'))
 }
 
-function getReactions(message, embed, filter, log, origUser, player, enemy, turn) {
+function getReactions(message, embed, filter, log, origUser, player, enemies, turn) {
 	message.edit(embed)
 	//.then(() => message.clearReactions())
 	.then(() => {
@@ -70,7 +72,7 @@ function getReactions(message, embed, filter, log, origUser, player, enemy, turn
 		var exit = false;
 
     	collector.on('collect',async reaction => {
-    		var reactAnswer = reactTo(reaction.emoji, log, origUser, player, enemy, turn);
+    		var reactAnswer = reactTo(reaction.emoji, log, origUser, player, enemies, turn);
     		log = reactAnswer[1];
     		exit = reactAnswer[2];
     		turn = reactAnswer[3];
@@ -89,7 +91,7 @@ function getReactions(message, embed, filter, log, origUser, player, enemy, turn
     	});
     	collector.on('end', collected => {
     		if (collected.size > 0 && exit == false) {
-    			getReactions(message, embed, filter, log, origUser, player, enemy, turn);
+    			getReactions(message, embed, filter, log, origUser, player, enemies, turn);
     		} else if (exit == false) {
     			var newEmbed = embed;
     			newEmbed.setDescription(embed.description + "\n\n -> The Battle is Over! <-");
@@ -100,9 +102,9 @@ function getReactions(message, embed, filter, log, origUser, player, enemy, turn
 	})
 }
 
-function reactTo(emoji, log, origUser, player, enemy, turn) {
+function reactTo(emoji, log, origUser, player, enemies, turn) {
 	var text = "";
-	exit = false;
+	var exit = false;
 
 	var actionList = [];
 	var validInput = false;
@@ -112,6 +114,15 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 		actionList = player.getDefendActions();
 	}
 
+	var firstEnemy;
+	for (var i = 0; i < enemies.length; i++) {
+		let enemy = enemies[i];
+		firstEnemy = enemy;
+		if (enemy.isAlive())  {
+			break;
+		}
+	}
+
 	if (actionList.length < 1) {
 		text = "Passing...";
 		validInput = true;
@@ -119,9 +130,7 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 		switch(emoji.name) {
 			case getEmojiChar("A"):
 				if (actionList[0] != undefined) {
-					var attackAnswer = attack(player, enemy, actionList[0]);
-					text = attackAnswer[0];
-					exit = attackAnswer[1];
+					text = attack(player, firstEnemy, actionList[0]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -129,9 +138,7 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 				break;
 			case getEmojiChar("B"):
 				if (actionList[1] != undefined) {
-					var attackAnswer = attack(player, enemy, actionList[1]);
-					text = attackAnswer[0];
-					exit = attackAnswer[1];
+					text =  attack(player, firstEnemy, actionList[1]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -139,9 +146,7 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 				break;
 			case getEmojiChar("C"):
 				if (actionList[2] != undefined) {
-					var attackAnswer = attack(player, enemy, actionList[2]);
-					text = attackAnswer[0];
-					exit = attackAnswer[1];
+					text =  attack(player, firstEnemy, actionList[2]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -149,9 +154,7 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 				break;
 			case getEmojiChar("D"):
 				if (actionList[3] != undefined) {
-					var attackAnswer = attack(player, enemy, actionList[3]);
-					text = attackAnswer[0];
-					exit = attackAnswer[1];
+					text = attack(player, firstEnemy, actionList[3]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -176,26 +179,40 @@ function reactTo(emoji, log, origUser, player, enemy, turn) {
 		if (turn == "player") {
 			turn = "enemy";
 		} else {
-			var enemyAnswer = enemyTurn(enemy, player);
-			text += "\n" + enemyAnswer[0];
-			exit = enemyAnswer[1];
-			turn = "player";
+			enemies.forEach(enemy => {
+				text += "\n" +  enemyTurn(enemy, player);
+				turn = "player";
+			})
 		}
 	}
+
+	var dead = true;
+	enemies.forEach(enemy => {
+		if (enemy.isAlive()) {
+			dead = false;
+		}
+	});
+	if (!player.isAlive() || dead == true) {
+		exit = true;
+		text += "\nBattle end.";
+	}
+
 	log.add(text);
-	return [getFightDescription(player, enemy, log, turn), log, exit, turn];
+	return [getFightDescription(player, enemies, log, turn), log, exit, turn];
 }
 
 function enemyTurn(creep, player) {
-	var pattern = creep.getClass();
-	var attackActions = creep.getAttackActions();
-	var attackOption = getRandomElement(attackActions);
-	var text = "";
-	switch(pattern) {
-		case 'Fighter':
-			return attack(creep, player, attackOption);
+	if (creep.isAlive()) {
+		var pattern = creep.getClass();
+		var attackActions = creep.getAttackActions();
+		var attackOption = getRandomElement(attackActions);
+		var text = "";
+		switch(pattern) {
+			case 'Fighter':
+				return attack(creep, player, attackOption);
+		}
 	}
-	return ["", false];
+	return "";
 }
 
 function attack(attacker, victim, option) {
@@ -206,24 +223,49 @@ function attack(attacker, victim, option) {
 	var trueDamage = victim.dealDamage(damageTable);
 	if (victim.isAlive()) {
 		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-		return [text, false];
+		return text;
 	} else {
 		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-		text += "\n" + attacker.toString() + " killed " + victim.toString() + "!\nBattle end.";
-		return [text, true];
+		text += "\n" + attacker.toString() + " killed " + victim.toString() + "!";
+		return text;
 	}
 }
 
-function getFightDescription(player, enemy, log, turn) {
-	var enemyDeath = "";
-	if (!enemy.isAlive()) {enemyDeath = " ☠";}
+function getFightDescription(player, enemies, log, turn) {
 	var playerDeath = "";
 	if (!player.isAlive()) {playerDeath = " ☠";}
 
-	var text = "Watch out for this epic battle between `" + player.toString() + "` and `" + enemy.toString() + "`            !";
+	var enemyText = "";
+	enemies.forEach(enemy => {
+		if (enemyText == "") {
+			enemyText += enemy.toString();
+		} else {
+			enemyText += ", " + enemy.toString();
+		}
+	})
+
+	var startLetter = "A";
+	if (enemies.length > 1) {
+		enemies.forEach(enemy => {
+			var unitName = enemy.getName() + " " + startLetter;
+			startLetter = String.fromCharCode(startLetter.charCodeAt(0) + 1);
+			enemy.setName(unitName);
+		});
+	}
+
+	var text = "Watch out for this epic battle between `" + player.toString() + "` and `" + enemyText + "`            !";
 	text += "\n```";
-	text += visualizeHP(enemy) + "\n";
-	text += "⨠ " + enemy.toString() + enemyDeath + "\n\n<------------------------------------------------>\n";
+
+	enemies.forEach(enemy => {
+		var enemyDeath = "";
+		if (!enemy.isAlive()) {enemyDeath = " ☠";}
+
+		text += visualizeHP(enemy) + "\n";
+		text += "⨠ " + enemy.toString() + enemyDeath + "\n\n";
+
+	});
+	
+	text += "<------------------------------------------------>\n";
 	text += log.toString();
 	text += "<------------------------------------------------>\n\n" + visualizeHP(player) + "\n";
 	text += "⨠ " + player.toString() + playerDeath + "\n\n";
