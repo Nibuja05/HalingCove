@@ -6,7 +6,9 @@
 		],
 		"Bonuses" : [
 			{
-				"Armor" : 
+				"BodyPhysArmor" : "%val",
+				"HeadPhysArmor" : "%val",
+				"LegPhysArmor" : "%val"
 			}
 		]
 	}

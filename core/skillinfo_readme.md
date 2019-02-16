@@ -48,7 +48,7 @@ contains a list of actions that are executed one after the other
   - Enemy: applies the modifier to a single enemy unit
   - EnemyGroup: applies the modifier to a group of enemies. Note: additional parameter 'Count avaliable'
 - Name: name of the modifier
-- Strength: how strong is this modifier. Relative values and arithmetics can be used:
+- Strength: how strong is this modifier. Relative values and arithmetics can be used: (-> refers to %val in the modifier)
   - %level: level of this skill, normally defined in unitinfo.json
   - %count: how many times this skill has been activated
 - Duration: how long this modifier lasts

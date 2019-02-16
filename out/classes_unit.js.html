@@ -1,13 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: classes/unit.js</title>
 
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: classes/unit.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>
 /**
- * A class for all units in a battle to quickly perform actions like attacking, casting, etc
+ * 
  */
 class Unit {
 	/**
 	 * initializes a player with values from the database
-	 * @param  {Connection} con  	database connection
-	 * @param  {User} user 			player
-	 * @return {Promise}      		promise
+	 * @param  {Connection} con  database connection
+	 * @param  {User} user player
+	 * @return {Promise}      Promise
 	 */
 	initPlayer(con, user) {
 		return new Promise(async (resolve, reject) => {
@@ -53,7 +81,7 @@ class Unit {
 	 * initializes a creep with values from unitinfo.json
 	 * @param  {string} name      	name of this creep
 	 * @param  {int} level     		level of this creep
-	 * @param  {Array<Modifier>} modifiers array of modifiers this unit has from the start
+	 * @param  {Array&lt;Modifier>} modifiers array of modifiers this unit has from the start
 	 */
 	initCreep(name, level, modifiers) {
 		const unitInfo = require('./../unitinfo.json').creep[name];
@@ -89,12 +117,12 @@ class Unit {
 	 * @param {string} unitClass     class of this unit
 	 * @param {int} maxHP         maximum HP
 	 * @param {int} maxMana       maximum Mana
-	 * @param {Array<string>} attackActions avaliable attack actions
-	 * @param {Array<string>} defendActions avaliable defend actions
+	 * @param {Array&lt;string>} attackActions avaliable attack actions
+	 * @param {Array&lt;string>} defendActions avaliable defend actions
 	 */
 	setVals(unitName, unitType, level, unitClass, maxHP, maxMana, attackActions, defendActions) {
 		this.unitName = unitName;
-		this.level = level; 
+		this.level = level;
 		this.unitClass = unitClass;
 		this.unitType = unitType;
 		this.maxHP = maxHP;
@@ -105,10 +133,6 @@ class Unit {
 		this.modifiers = [];
 		this.attackActions = attackActions;
 		this.defendActions = defendActions;
-		this.range = 1;
-
-		this.events = require('events');
-		this.emitter = new this.events.EventEmitter();
 	}
 	/**
 	 * return the name if this unit
@@ -175,7 +199,7 @@ class Unit {
 	 * @return {Boolean}       answer
 	 */
 	isMinLevel(level) {
-		if (level <= this.level) {
+		if (level &lt;= this.level) {
 			return true;
 		}
 		return false;
@@ -226,7 +250,7 @@ class Unit {
 	}
 	/**
 	 * deals damage to this unit
-	 * @param  {Array<int>} damageTable 	damage table (Phys / Magic / Pure)
+	 * @param  {Array&lt;int>} damageTable 	damage table (Phys / Magic / Pure)
 	 * @return {int}             			sum of the true damage this unit received after all reductions
 	 */
 	dealDamage(damageTable) {
@@ -240,7 +264,6 @@ class Unit {
 			this.curHP = 0;
 			this.alive = false;
 		}
-		this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
 		return damageSum;
 	}
 	/**
@@ -262,11 +285,9 @@ class Unit {
 	/**
 	 * add a new modifier to this unit
 	 * @param {Modifier} modifier new modifier
-	 * @return {EventEmitter}	event emitter of this unit
 	 */
 	addModifier(modifier) {
-		this.modifiers.push(modifier);
-		return this.emitter;
+		this.modifiers.append(modifier);
 	}
 	/**
 	 * remove a given modifier from this unit
@@ -276,7 +297,7 @@ class Unit {
 		var newModifiers = [];
 		this.modifiers.forEach(mod => {
 			if (!(mod === modifier)) {
-				newModifiers.push(mod);
+				newModifiers.append(mod);
 			}
 		});
 		this.modifiers = newModifiers;
@@ -289,28 +310,28 @@ class Unit {
 		var newModifiers = [];
 		this.modifiers.forEach(mod => {
 			if (!(mod.name == modifierName)) {
-				newModifiers.push(mod);
+				newModifiers.append(mod);
 			}
 		});
 		this.modifiers = newModifiers;
 	}
 	/**
 	 * return a list of all possible attack actions
-	 * @return {Array<string>} possible attack actions
+	 * @return {Array&lt;string>} possible attack actions
 	 */
 	getAttackActions() {
 		return this.attackActions;
 	}
 	/**
 	 * return a list of all possible defend actions
-	 * @return {Array<string>} possible defend actions
+	 * @return {Array&lt;string>} possible defend actions
 	 */
 	getDefendActions() {
 		return this.defendActions;
 	}
 	/**
 	 * returns the attack damage of this unit as damage table
-	 * @return {Array<int>} damage table (Phys / Magic / Pure)
+	 * @return {Array&lt;int>} damage table (Phys / Magic / Pure)
 	 */
 	getAttackDamage() {
 		//get base damage from weapons
@@ -343,40 +364,15 @@ class Unit {
 		damage.forEach((dmg, index) => {
 			if (dmg != 0) {
 				var value = Math.ceil(dmg / 4);
-				if (value < 1) value = 1;
+				if (value &lt; 1) value = 1;
 				var variation = getRandomInt(-value, value);
 				damage[index] += variation;
-				if (damage[index] < 1) {
+				if (damage[index] &lt; 1) {
 					damage[index] = 0;
 				}
 			}
 		})
 		return damage;
-	}
-	/**
-	 * adds the current battle log to this unit, to add important stuff directly
-	 */
-	addLog(log) {
-		this.battleLog = log;
-	}
-	/**
-	 * attacks an enemy to deal damage
-	 * @param  {Unit} enemy 	unit to attack  	
-	 */
-	attackEnemy(enemy, option) {
-		var damageTable = {};
-		damageTable.attacker = this;
-		damageTable.range = this.range;
-		damageTable.damage = this.getAttackDamage();
-		var trueDamage = enemy.dealDamage(damageTable);
-		if (enemy.isAlive()) {
-			var text = this.toString() + " attacked " + enemy.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-		} else {
-			var text = this.toString() + " attacked " + enemy.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-			text += "\n" + this.toString() + " killed " + enemy.toString() + "!";	
-		}
-		this.emitter.emit("OnAttackLanded", {attacker:this, victim:enemy, attackOption:option, dealtDamage:trueDamage});
-		this.battleLog.add(text);
 	}
 }
 
@@ -386,4 +382,26 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-module.exports = Unit;
+module.exports = Unit;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_character.html">core/character</a></li><li><a href="module-core_item.html">core/item</a></li></ul><h3>Classes</h3><ul><li><a href="BattleLog.html">BattleLog</a></li><li><a href="Unit.html">Unit</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Feb 16 2019 01:46:17 GMT+0100 (GMT+01:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ const Discord = require ('discord.js');
 async function start(con, user, channel) {
 	console.log("[FT] Starting...");
 	var Unit = require('./classes/unit.js');
+	var FightWindow = require('./classes/helper.js').FightWindow;
 
 	//var player = new Unit("Rüdiger", "player", 1, "Unexperienced Adventurer", 100, 20);
 	//await player.loadPlayerData(con, user);
@@ -13,20 +14,26 @@ async function start(con, user, channel) {
 	var slime2 = new Unit();
 	slime2.initCreep("Slime", 1);
 
-   	sendEmbed(channel, "Starting Fight...", "#660000", user.id, player, [slime, slime2]);
+	var fightWindow = new FightWindow(channel, "Starting Fight...", "#660000", user.id, player, [slime, slime2]);
+   	//sendFightWindow(channel, "Starting Fight...", "#660000", user.id, player, [slime, slime2]);
 }
 
 async function test(con, user, channel) {
 	var Unit = require('./classes/unit.js');
+	var Skill = require('./classes/skill.js');
 
 	var player = new Unit();
 	await player.initPlayer(con, user);
+
+	var fortify = new Skill("Fortify", 1, player);
+	console.log(fortify.activate());
 }
 
-function sendEmbed(channel, title, color, origUser, player, enemies) {
+function sendFightWindow(channel, title, color, origUser, player, enemies) {
 
 	const helper = require('./classes/helper.js')
 	var log = new helper.BattleLog(10);
+	player.addLog(log);
 	var description = getFightDescription(player, enemies, log, "player")
 
 	var embed = new Discord.RichEmbed()
@@ -130,7 +137,7 @@ function reactTo(emoji, log, origUser, player, enemies, turn) {
 		switch(emoji.name) {
 			case getEmojiChar("A"):
 				if (actionList[0] != undefined) {
-					text = attack(player, firstEnemy, actionList[0]);
+					attack(player, firstEnemy, actionList[0]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -138,7 +145,7 @@ function reactTo(emoji, log, origUser, player, enemies, turn) {
 				break;
 			case getEmojiChar("B"):
 				if (actionList[1] != undefined) {
-					text =  attack(player, firstEnemy, actionList[1]);
+					attack(player, firstEnemy, actionList[1]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -146,7 +153,7 @@ function reactTo(emoji, log, origUser, player, enemies, turn) {
 				break;
 			case getEmojiChar("C"):
 				if (actionList[2] != undefined) {
-					text =  attack(player, firstEnemy, actionList[2]);
+					attack(player, firstEnemy, actionList[2]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -154,7 +161,7 @@ function reactTo(emoji, log, origUser, player, enemies, turn) {
 				break;
 			case getEmojiChar("D"):
 				if (actionList[3] != undefined) {
-					text = attack(player, firstEnemy, actionList[3]);
+					attack(player, firstEnemy, actionList[3]);
 					validInput = true;
 				} else {
 					text = "Action not avaliable!";
@@ -216,19 +223,7 @@ function enemyTurn(creep, player) {
 }
 
 function attack(attacker, victim, option) {
-	var damageTable = {};
-	damageTable.attacker = attacker;
-	damageTable.range = 1;
-	damageTable.damage = attacker.getAttackDamage();
-	var trueDamage = victim.dealDamage(damageTable);
-	if (victim.isAlive()) {
-		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-		return text;
-	} else {
-		var text = attacker.toString() + " attacked " + victim.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-		text += "\n" + attacker.toString() + " killed " + victim.toString() + "!";
-		return text;
-	}
+	attacker.attackEnemy(victim, option);
 }
 
 function getFightDescription(player, enemies, log, turn) {
