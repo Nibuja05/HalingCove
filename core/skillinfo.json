@@ -1,0 +1,36 @@
+{
+	"Active" : {
+		"Fortify" : {
+			"ManaCost" : "10",
+			"HealthCost" : "0",
+			"Turn" : "Attack",
+			"Cooldown" : "3",
+			"Actions" : [
+				{
+					"ApplyModifier" : {
+						"Target" : "Self",
+						"Name" : "modifier_fortify",
+						"Strength" : "%level",
+						"Duration" : "3"
+					}
+				}
+			]
+		},
+		"Blade Poison" : {
+			"ManaCost" : "10",
+			"HealthCost" : "0",
+			"Turn" : "AttackBonus",
+			"Cooldown" : "1",
+			"Actions" : [
+				{
+					"ApplyModifier" : {
+						"Target" : "Self",
+						"Name" : "modifier_poison_attack",
+						"Strength" : "%level",
+						"Duration" : "1"
+					}
+				}
+			]
+		}
+	}
+}

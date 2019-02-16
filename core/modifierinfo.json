@@ -1,0 +1,15 @@
+{
+	"modifier_fortify" : {
+		"Debuff" : "0",
+		"Purgeable" : "0",
+		"Events" : [
+		],
+		"Bonuses" : [
+			{
+				"BodyPhysArmor" : "%val",
+				"HeadPhysArmor" : "%val",
+				"LegPhysArmor" : "%val"
+			}
+		]
+	}
+}
