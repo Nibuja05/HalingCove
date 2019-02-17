@@ -11,6 +11,7 @@ class BattleLog{
 		this.maxLen = maxLen;
 		this.cont = [];
 		this.emitter = emitter;
+		this.delayedCont = [];
 	}
 	/**
 	 * returns the length of this log
@@ -28,6 +29,10 @@ class BattleLog{
 		for (var i = 0; i < newArr.length; i++) {
 			this.cont.splice(0, 0, newArr[i]);
 		}
+		for (var i = 0; i < this.delayedCont.length; i++) {
+			this.cont.splice(0, 0, this.delayedCont[i]);
+		}
+		this.delayedCont = [];
 		var lineCount = 0;
 		var maxIndex = this.cont.length;
 		for (var i = 0; i < this.cont.length; i++) {
@@ -39,6 +44,12 @@ class BattleLog{
 		}
 		this.cont.splice(maxIndex, (this.cont.length - maxIndex + 1));
 		this.emitter.emit("Update");
+	}
+	addDelayed(newText) {
+		var newArr = newText.split("\n");
+		for (var i = 0; i < newArr.length; i++) {
+			this.delayedCont.push(newArr[i]);
+		}
 	}
 	measureElement(elem) {
 		var n = 50; //maximum line length, limited to 50
@@ -60,7 +71,11 @@ class BattleLog{
 			if (lineCount > this.maxLen) {
 				break;
 			} else {
-				text += "- " + this.cont[i] + "\n";
+				if (this.cont[i] == "") {
+					text += "\n";
+				} else {
+					text += "- " + this.cont[i] + "\n";
+				}
 			}
 		}
 		var count = this.maxLen - lineCount;
@@ -81,12 +96,13 @@ class FightWindow {
 		this.player = player;
 		this.enemies = enemies;
 		this.turn = "player"
+		this.showSkills = false;
 
 		this.events = require('events');
 		this.emitter = new this.events.EventEmitter();
 		this.addListener();
 
-		this.log = new BattleLog(10, this.emitter);
+		this.log = new BattleLog(20, this.emitter);
 		player.addLog(this.log);
 		enemies.forEach(enemy => enemy.addLog(this.log));
 		var description = this.getFightDescription(player, enemies, this.log, this.turn)
@@ -137,7 +153,7 @@ class FightWindow {
 	getReactions() {
 		this.message.edit(this.embed)
 		.then(() => {
-			let collector = this.message.createReactionCollector(this.filter, { max: 1, time: 10000, errors: ['time'] });
+			let collector = this.message.createReactionCollector(this.filter, { max: 1, time: 20000, errors: ['time'] });
 			var exit = false;
 
 	    	collector.on('collect',async reaction => {
@@ -171,11 +187,19 @@ class FightWindow {
 		var exit = false;
 
 		var actionList = [];
-		var validInput = false;
+		var playerAction = false;
 		if (this.turn == "player") {
-			actionList = this.player.getAttackActions();
+			if (this.showSkills) {
+				actionList = this.player.getSkillActions("attack");
+			} else {
+				actionList = this.player.getAttackActions();
+			}
 		} else {
-			actionList = this.player.getDefendActions();
+			if (this.showSkills) {
+				actionList = this.player.getSkillActions("defend");
+			} else {
+				actionList = this.player.getDefendActions();
+			}
 		}
 
 		var firstEnemy;
@@ -189,37 +213,53 @@ class FightWindow {
 
 		if (actionList.length < 1) {
 			text = "Passing...";
-			validInput = true;
+			playerAction = true;
 		} else {
 			switch(emoji.name) {
 				case getEmojiChar("A"):
 					if (actionList[0] != undefined) {
-						this.attack(this.player, firstEnemy, actionList[0]);
-						validInput = true;
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[0]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[0]);
+						}
 					} else {
 						this.log.add("Action not avaliable!");
 					}
 					break;
 				case getEmojiChar("B"):
 					if (actionList[1] != undefined) {
-						this.attack(this.player, firstEnemy, actionList[1]);
-						validInput = true;
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[1]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[1]);
+						}
 					} else {
 						this.log.add("Action not avaliable!");
 					}
 					break;
 				case getEmojiChar("C"):
 					if (actionList[2] != undefined) {
-						this.attack(this.player, firstEnemy, actionList[2]);
-						validInput = true;
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[2]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[2]);
+						}
 					} else {
 						this.log.add("Action not avaliable!");
 					}
 					break;
 				case getEmojiChar("D"):
 					if (actionList[3] != undefined) {
-						this.attack(this.player, firstEnemy, actionList[3]);
-						validInput = true;
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[3]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[3]);
+						}
 					} else {
 						this.log.add("Action not avaliable!");
 					}
@@ -229,7 +269,13 @@ class FightWindow {
 					exit = false;
 					break;
 				case getEmojiChar("skill"):
-					this.log.add("You want to use your incredibly overpowered magic spell! But you dont have enough mana...");
+					if (this.showSkills) {
+						this.showSkills = false;
+					} else {
+						this.showSkills = true;
+					}
+					this.update();
+					//this.log.add("You want to use your incredibly overpowered magic spell! But you dont have enough mana...");
 					exit = false;
 					break;
 				case getEmojiChar("leave"):
@@ -239,14 +285,25 @@ class FightWindow {
 			}
 		}
 
-		if (validInput == true) {
+		if (playerAction == true) {
 			if (this.turn == "player") {
 				this.turn = "enemy";
+				this.showSkills = false;
+
+				console.log("<--- Enemy Turn --->");
+				this.log.add("\n<--- Enemy Turn --->\n")
+				this.enemies.forEach(enemy => {
+					enemy.startTurn();
+				});
 			} else {
 				this.enemies.forEach(enemy => {
 					text += "\n" +  this.enemyTurn(enemy, this.player);
 					this.turn = "player";
-				})
+				});
+				this.showSkills = false;
+				console.log("<--- Player Turn --->");
+				this.log.add("\n<--- Player Turn --->\n")
+				this.player.startTurn();
 			}
 			this.update();
 		}
@@ -273,14 +330,10 @@ class FightWindow {
 			var text = "";
 			switch(pattern) {
 				case 'Fighter':
-					return this.attack(creep, player, attackOption);
+					return creep.attackEnemy(player, attackOption);
 			}
 		}
 		return "";
-	}
-
-	attack(attacker, victim, option) {
-		attacker.attackEnemy(victim, option);
 	}
 
 	getFightDescription(player, enemies, log, turn) {
@@ -313,6 +366,7 @@ class FightWindow {
 			if (!enemy.isAlive()) {enemyDeath = " ☠";}
 
 			text += this.visualizeHP(enemy) + "\n";
+			text += this.visualizeMana(enemy) + "\n";
 			text += "⨠ " + enemy.toString() + enemyDeath + "\n\n";
 
 		});
@@ -320,11 +374,20 @@ class FightWindow {
 		text += "<------------------------------------------------>\n";
 		text += log.toString();
 		text += "<------------------------------------------------>\n\n" + this.visualizeHP(player) + "\n";
+		text += this.visualizeMana(player) + "\n";
 		text += "⨠ " + player.toString() + playerDeath + "\n\n";
 		if (turn == "player") {
-			text += "It's your turn!\n" + this.getUnitOptions(player, "attack");
+			if (this.showSkills) {
+				text += "It's your turn!\n" + this.getUnitOptions(player, "attackSkills");
+			} else {
+				text += "It's your turn!\n" + this.getUnitOptions(player, "attack");
+			}
 		} else {
-			text += "It's the enemies turn!\n" + this.getUnitOptions(player, "defend");
+			if (this.showSkills) {
+				text += "It's your turn!\n" + this.getUnitOptions(player, "defendSkills");
+			} else {
+				text += "It's the enemies turn!\n" + this.getUnitOptions(player, "defend");
+			}
 		}
 		
 		text += "```";
@@ -345,6 +408,14 @@ class FightWindow {
 			actions = unit.getDefendActions();
 			text += "Your Defend Actions:\n";
 			wording = "Defend";
+		} else if (type == "attackSkills") {
+			actions = unit.getSkillActions("attack");
+			text += "Your Attack Skills:\n";
+			wording = "Use ";
+		} else if (type == "defendSkills") {
+			actions = unit.getSkillActions("defend");
+			text += "Your Defend Skills:\n";
+			wording = "Use ";
 		}
 		if (actions.length > 0) {
 			symbols.forEach((x, index) => {
@@ -375,6 +446,20 @@ class FightWindow {
 		text += "⦌ " + unit.curHP + "/" + unit.maxHP;
 		return text;
 	}
+
+	visualizeMana(unit) {
+		var text = "⦓";
+		var blockCount = Math.floor((unit.curMana / unit.maxMana) * 16);
+		if (unit.maxMana == 0) { blockCount = 0 }
+		for (var i = 0; i < blockCount; i++) {
+			text += "◆";
+		}
+		for (var i = blockCount; i < 16; i++) {
+			text += "◇";
+		}
+		text += "⦔ " + unit.curMana + "/" + unit.maxMana;
+		return text;
+	}	
 
 	async reactWith(message, emojiList) {
 		if (emojiList.length > 0) {

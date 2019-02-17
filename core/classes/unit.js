@@ -43,6 +43,7 @@ class Unit {
 				var hp = this.calculateStartHP(unitInfo.BaseHP, true);
 				var mana = this.calculateStartMana(unitInfo.BaseMana, true);
 				this.setVals(result.charName, "player", result.level, result.charClass, hp, mana, attackActions, defendActions);
+				this.loadSkills(unitInfo.Skills);
 				resolve();
 			} else {
 				reject();
@@ -61,7 +62,8 @@ class Unit {
 		var hp = this.calculateStartHP(unitInfo.BaseHP, false);
 		var mana = this.calculateStartMana(unitInfo.BaseMana, false);
 		this.creepDamage = [Number(unitInfo.PhysAttack), Number(unitInfo.MagicAttack), Number(unitInfo.PureAttack)];
-		this.setVals(name, "creep", level, unitInfo.MovePattern, hp, mana, unitInfo.AttackPattern, unitInfo.DefendPattern)
+		this.setVals(name, "creep", level, unitInfo.MovePattern, hp, mana, unitInfo.AttackPattern, unitInfo.DefendPattern);
+		this.loadSkills(unitInfo.Skills);
 	}
 	/**
 	 * calculates the starting HP
@@ -109,6 +111,23 @@ class Unit {
 
 		this.events = require('events');
 		this.emitter = new this.events.EventEmitter();
+	}
+	/**
+	 * initializes the skills of this unit
+	 * @param  {Dict} skills skill dictoionary from unitinfo.json
+	 */
+	loadSkills(skills) {
+		var Skill = require('./skill.js');
+		var actives = skills.Active;
+		this.actives = [];
+		for (const [key, value] of Object.entries(actives)) {
+			this.actives.push(new Skill(key, value, this, this.emitter));
+		}
+		var passives = skills.Passive;
+		this.passives = [];
+		for (const [key, value] of Object.entries(passives)) {
+			this.passives.push(new Skill(key, value, this, this.emitter));
+		}
 	}
 	/**
 	 * return the name if this unit
@@ -238,9 +257,10 @@ class Unit {
 			this.curHP = this.curHP - damageSum;
 		} else {
 			this.curHP = 0;
-			this.alive = false;
+			this.kill();
 		}
 		this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+		console.log("[UNIT] " + damageSum + " damage to " + this.toString());
 		return damageSum;
 	}
 	/**
@@ -248,6 +268,10 @@ class Unit {
 	 */
 	kill() {
 		this.alive = false;
+		this.battleLog.addDelayed(this.toString() + " died!");
+		this.modifiers.forEach(modifier => {
+			modifier.remove();
+		});
 	}
 	/**
 	 * is this unit a player?
@@ -266,6 +290,9 @@ class Unit {
 	 */
 	addModifier(modifier) {
 		this.modifiers.push(modifier);
+		console.log("[UNIT] Added Modifier '" + modifier.name + "'!");
+		//currently not used, cause it is printed to early -> delayed battle log adder?
+		//this.battleLog.add(this.toString() + " is now affected by " + modifier.name);
 		return this.emitter;
 	}
 	/**
@@ -307,6 +334,25 @@ class Unit {
 	 */
 	getDefendActions() {
 		return this.defendActions;
+	}
+	/**
+	 * returns a list of all possible skill actions
+	 * @return {Array<string>} possible skill actions
+	 */
+	getSkillActions(skillType) {
+		var textArr = [];
+		this.actives.forEach(active => {
+			if (skillType == "attack") {
+				if (active.isAttackSkill()) {
+					textArr.push(active.toString());
+				}
+			} else if (skillType == "defend") {
+				if (active.isDefendSkill()) {
+					textArr.push(active.toString());
+				}
+			}
+		});
+		return textArr;
 	}
 	/**
 	 * returns the attack damage of this unit as damage table
@@ -360,6 +406,12 @@ class Unit {
 		this.battleLog = log;
 	}
 	/**
+	 * called when a turn of this unit start, emits event
+	 */
+	startTurn() {
+		this.emitter.emit("OnTurnStart", this);
+	}
+	/**
 	 * attacks an enemy to deal damage
 	 * @param  {Unit} enemy 	unit to attack  	
 	 */
@@ -373,10 +425,34 @@ class Unit {
 			var text = this.toString() + " attacked " + enemy.toString() + " " + option + " and dealt " + trueDamage + " damage!";
 		} else {
 			var text = this.toString() + " attacked " + enemy.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-			text += "\n" + this.toString() + " killed " + enemy.toString() + "!";	
+			//text += "\n" + this.toString() + " killed " + enemy.toString() + "!";	
 		}
 		this.emitter.emit("OnAttackLanded", {attacker:this, victim:enemy, attackOption:option, dealtDamage:trueDamage});
 		this.battleLog.add(text);
+	}
+	/**
+	 * activates a skill with given name on a target
+	 * @param  {Unit} enemy       target of the skill (optional)
+	 * @param  {string} skillName name of the skill
+	 * @return {Boolean}          did this activation consume a turn?
+	 */
+	castSkill(enemy, skillName) {
+		var skillName = skillName.substring(0, skillName.lastIndexOf(" "));
+		var skill
+		this.actives.forEach(active => {
+			if (active.name == skillName) {
+				skill = active;
+			}
+		});
+		var activate = skill.activate(enemy);
+		this.battleLog.add(activate.text);
+		if (!activate.success) {
+			return false;
+		}
+		if (skill.isBonusAction()) {
+			return false;
+		}
+		return true;
 	}
 }
 

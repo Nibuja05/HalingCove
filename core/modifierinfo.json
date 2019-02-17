@@ -1,5 +1,6 @@
 {
 	"modifier_fortify" : {
+		"Name" : "Fortify",
 		"Debuff" : "0",
 		"Purgeable" : "0",
 		"Events" : [
@@ -10,6 +11,51 @@
 				"HeadPhysArmor" : "%val",
 				"LegPhysArmor" : "%val"
 			}
+		],
+		"Properties" : [
+		],
+	},
+	"modifier_poison_attack" : {
+		"Name" : "Poisoned Blade",
+		"Debuff" : "0",
+		"Purgeable" : "1",
+		"Events" : [
+			{
+				"OnAttackLanded" : {
+					"ApplyModifier" : {
+						"Target" : "Enemy",
+						"Name" : "modifier_weak_poison",
+						"Strength" : "%val",
+						"Duration" : "3"
+					},
+					"EventMessage" : "%parent poisened %target!"
+				}
+			}
+		],
+		"Bonuses" : [
+			{
+				"MagicAttack" : "%val * 5"
+			}
+		]
+	},
+	"modifier_weak_poison" : {
+		"Name" : "Weak Poison",
+		"Debuff" : "1",
+		"Purgeable" : "1",
+		"Events" : [
+			{
+				"OnTurnStart" : {
+					"DealDamage" : {
+						"Target" : "Self",
+						"PhysDamage" : "0",
+						"MagicDamage" : "%val * 2",
+						"PureDamage" : "0"
+					},
+					"EventMessage" : "%parent suffered from poison and took {%val * 2} damage"
+				}
+			}
+		],
+		"Bonuses" : [
 		]
 	}
 }
