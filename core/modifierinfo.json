@@ -13,7 +13,7 @@
 			}
 		],
 		"Properties" : [
-		],
+		]
 	},
 	"modifier_poison_attack" : {
 		"Name" : "Poisoned Blade",
@@ -36,6 +36,8 @@
 			{
 				"MagicAttack" : "%val * 5"
 			}
+		],
+		"Properties" : [
 		]
 	},
 	"modifier_weak_poison" : {
@@ -56,6 +58,8 @@
 			}
 		],
 		"Bonuses" : [
+		],
+		"Properties" : [
 		]
 	}
 }

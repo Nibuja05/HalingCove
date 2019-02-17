@@ -27,7 +27,6 @@ class Skill{
 			this.skillType = "Active";
 			infos = actives[name];
 			this.manaCost = Number(infos["ManaCost"]);
-			this.manaCost = 0;
 			this.healthCost = Number(infos["HealthCost"]);
 			this.turn = infos["Turn"];
 			this.actions = infos["Actions"];
