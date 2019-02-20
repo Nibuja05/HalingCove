@@ -5,6 +5,7 @@
 	"main": "bot.js",
 	"author": "Nibuja",
 	"dependencies": {
+		"await-event-emitter": "^1.2.0",
 		"discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
 		"discord.js": "^11.4.2",
 		"mysql": "^2.16.0",

@@ -95,7 +95,13 @@ client.on('message', async msg => {
 		    	break;
 		    case 'local':
 		    	manageLocal(msg, args, confirm);
-		    break;
+		    	break;
+		    case 'help':
+		    	manageHelp(msg, args, confirm);
+		    	break;
+		    case 'h':
+		    	manageHelp(msg, args, confirm);
+		    	break;
 		}
 	}
 });
@@ -226,7 +232,7 @@ function manageCharacter(msg, args, confirm) {
         	break;
         case 'equip':
         	character.equip(con, user, channel, args);
-        break;
+        	break;
     }
 }
 
@@ -256,7 +262,7 @@ function manageDevCommands(msg, args, confirm) {
         	break;
         case 'playerTest':
         	fight.test(con, user, channel);
-        break;
+        	break;
     }
 }
 
@@ -275,7 +281,7 @@ function manageInventory(msg, args, confirm) {
             break;
         case undefined:
         	inventory.show(con, channel, user);
-        break;
+        	break;
     }
 }
 
@@ -300,7 +306,7 @@ function manageExplore(msg, args, confirm) {
         	break;
         case 'claim':
         	explore.claim(con, channel, user);
-        break;
+        	break;
     }
 }
 
@@ -321,7 +327,7 @@ function manageMap(msg, args, confirm) {
         	break;
         case 'travel':
         	map.travelTo(con, channel, user, args);
-        break;
+        	break;
     }
 }
 
@@ -333,6 +339,17 @@ function manageLocal(msg, args, confirm) {
     var channel = msg.channel;
 
     map.showLocal(con, channel, user, args, confirm);
+}
+
+function manageHelp(msg, args, confirm) {
+	var help = require('./core/help.js');
+    var cmd = args[0];
+    args = args.splice(1);
+
+    var user = msg.author;
+    var channel = msg.channel;
+
+    help.showHelp(prefix, cmd, args, user, channel);
 
 }
 

@@ -109,8 +109,8 @@ class Unit {
 		this.defendActions = defendActions;
 		this.range = 1;
 
-		this.events = require('events');
-		this.emitter = new this.events.EventEmitter();
+		this.AwaitEventEmitter = require('await-event-emitter');
+		this.emitter = new this.AwaitEventEmitter();
 	}
 	/**
 	 * initializes the skills of this unit
@@ -248,10 +248,21 @@ class Unit {
 	 * @param  {Array<int>} damageTable 	damage table (Phys / Magic / Pure)
 	 * @return {int}             			sum of the true damage this unit received after all reductions
 	 */
-	dealDamage(damageTable) {
+	async dealDamage(damageTable) {
 		var damage = damageTable.damage;
 		var attacker = damageTable.attacker;
 		var range = damageTable.range;
+
+		await this.emitter.emit("OnTakeDamageBeforeReduction", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+		
+		//damage reduction (from armor etc) here
+		//
+		//
+		//
+
+		await this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+
+
 		var damageSum = damage[0] +  damage[1] +  damage[2]
 		if (this.canSurvive(damageSum)) {
 			this.curHP = this.curHP - damageSum;
@@ -259,9 +270,20 @@ class Unit {
 			this.curHP = 0;
 			this.kill();
 		}
-		this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+
 		console.log("[UNIT] " + damageSum + " damage to " + this.toString());
-		return damageSum;
+		if (damageSum == 0) {
+			damageSum = "no";
+		} 
+		if (this.isAlive()) {
+			var text = attacker.toString() + " attacked " + this.toString() + " and dealt " + damageSum + " damage!";
+		} else {
+			var text = attacker.toString() + " attacked " + this.toString() + " and dealt " + damageSum + " damage!";
+		}
+		this.battleLog.add(text);
+
+		await this.emitter.emit("OnTakeDamageFinal", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+
 	}
 	/**
 	 * kills this unit immideatly
@@ -420,15 +442,9 @@ class Unit {
 		damageTable.attacker = this;
 		damageTable.range = this.range;
 		damageTable.damage = this.getAttackDamage();
-		var trueDamage = enemy.dealDamage(damageTable);
-		if (enemy.isAlive()) {
-			var text = this.toString() + " attacked " + enemy.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-		} else {
-			var text = this.toString() + " attacked " + enemy.toString() + " " + option + " and dealt " + trueDamage + " damage!";
-			//text += "\n" + this.toString() + " killed " + enemy.toString() + "!";	
-		}
+		enemy.dealDamage(damageTable);
+
 		this.emitter.emit("OnAttackLanded", {attacker:this, victim:enemy, attackOption:option, dealtDamage:trueDamage});
-		this.battleLog.add(text);
 	}
 	/**
 	 * activates a skill with given name on a target
