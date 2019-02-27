@@ -89,6 +89,8 @@ async function visitmerchant(con, channel, user) {
 
 async function visitHealer(con, channel, user) {
 	printMessage(channel, "Welcome to the Healer! For a fee I can heal most injuries, what are your complaints?");
+	//check here for possible heal possibilities
+	printMessage(channel, "It seems that you are totally fit! Now go and slay some enemies!")
 	var sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + user.id;
     await con.query(sql);
 }

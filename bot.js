@@ -46,64 +46,64 @@ client.on('message', async msg => {
 
 	if (msg.author.bot) return;
 
-	const check = await checkLastCommand(msg);
-	var confirm = check[0];
-	var newMessage = check[1];
+	checkLastCommand(msg, (confirm, newMessage) => {
 
-	if (newMessage.startsWith(prefix)) {
-		var args = newMessage.substring(prefix.length).split(' ');
-		var cmd = args[0];
-		args = args.splice(1);
+		if (newMessage.startsWith(prefix)) {
+			var args = newMessage.substring(prefix.length).split(' ');
+			var cmd = args[0];
+			args = args.splice(1);
 
-		userCheck(msg.author)
+			userCheck(msg.author)
 
-		console.log("[BOT] Executing: " + newMessage + "; confirm: " + confirm);
+			console.log("[BOT] Executing: " + newMessage + "; confirm: " + confirm);
 
-		switch(cmd) {
-		    case 'ping':
-		        printMessage(msg.channel, "Pong!");
-		        break;
-		    case 'c':
-		        manageCharacter(msg, args, confirm);
-		        break;
-		    case 'char':
-		        manageCharacter(msg, args, confirm);
-		        break;
-		    case 'character':
-		        manageCharacter(msg, args, confirm);
-		        break;
-		    case 'dev':
-		    	manageDevCommands(msg, args, confirm);
-		    	break;
-		    case 'inv':
-		    	manageInventory(msg, args, confirm);
-		    	break;
-		    case 'inventory':
-		    	manageInventory(msg, args, confirm);
-		    	break;
-		    case 'explore':
-		    	manageExplore(msg, args, confirm);
-		    	break;
-		    case 'e':
-		    	manageExplore(msg, args, confirm);
-		    	break;
-		    case 'map':
-		    	manageMap(msg, args, confirm);
-		    	break;
-		    case 'm':
-		    	manageMap(msg, args, confirm);
-		    	break;
-		    case 'local':
-		    	manageLocal(msg, args, confirm);
-		    	break;
-		    case 'help':
-		    	manageHelp(msg, args, confirm);
-		    	break;
-		    case 'h':
-		    	manageHelp(msg, args, confirm);
-		    	break;
+			switch(cmd) {
+			    case 'ping':
+			        printMessage(msg.channel, "Pong!");
+			        break;
+			    case 'c':
+			        manageCharacter(msg, args, confirm);
+			        break;
+			    case 'char':
+			        manageCharacter(msg, args, confirm);
+			        break;
+			    case 'character':
+			        manageCharacter(msg, args, confirm);
+			        break;
+			    case 'dev':
+			    	manageDevCommands(msg, args, confirm);
+			    	break;
+			    case 'inv':
+			    	manageInventory(msg, args, confirm);
+			    	break;
+			    case 'inventory':
+			    	manageInventory(msg, args, confirm);
+			    	break;
+			    case 'explore':
+			    	manageExplore(msg, args, confirm);
+			    	break;
+			    case 'e':
+			    	manageExplore(msg, args, confirm);
+			    	break;
+			    case 'map':
+			    	manageMap(msg, args, confirm);
+			    	break;
+			    case 'm':
+			    	manageMap(msg, args, confirm);
+			    	break;
+			    case 'local':
+			    	manageLocal(msg, args, confirm);
+			    	break;
+			    case 'help':
+			    	manageHelp(msg, args, confirm);
+			    	break;
+			    case 'h':
+			    	manageHelp(msg, args, confirm);
+			    	break;
+			}
 		}
-	}
+	});
+
 });
 
 /**
@@ -127,7 +127,7 @@ async function userCheck(user) {
  * @param  {message} 	msg 	message object
  * @return {Promise}     		Promise returns confirm and the new message
  */
-function checkLastCommand(msg) {
+function checkLastCommand(msg, callback) {
 
 	return new Promise(async (resolve, reject) => {
 		var user = msg.author;
@@ -143,19 +143,19 @@ function checkLastCommand(msg) {
 	    	//if the message is only the prefix, execute last command again
 	        if (message === prefix) {
 	            console.log("[BOT] Executing command again: $$" + result[0].functionName);
-	            resolve([false, prefix + result[0].functionName]);
+	            callback(false, prefix + result[0].functionName);
 
 	        } else {
 
 	        	//if the last command requires a confirm, execute it again with new confirm value
 	            var optVal = result[0].optValues;
-	            if (optVal === "confirm") {
+	            if (optVal.includes("confirm")) {
 
 	            	//if the user wants to use a command while the bot awaits a confirm, cancel
 	                if (message.substring(0, prefix.length) == prefix) {
 	                    var text = "No new command allowed, please answer or write 'cancel'"
 	                    printMessage(channel, text);
-	                    reject();
+	                    return;
 
 	                //possibility for the user to cancel his confirm action
 	                } else if (message == "cancel") {
@@ -165,11 +165,11 @@ function checkLastCommand(msg) {
 	                    console.log("[DB] 1 record updated (lastCommand)")
 	                    var text = "Action canceled"
 	                    printMessage(channel, text);
-	                    reject();
+	                    return;
 
 	                //exevute last command with new confirm
 	                } else {
-	                    resolve([message, prefix + result[0].functionName]);
+	                    callback(message, prefix + result[0].functionName);
 	                }
 	            }
 
@@ -179,7 +179,7 @@ function checkLastCommand(msg) {
 	                result = await con.query(sql);
 
 	                console.log("[DB] 1 record updated (lastCommand)");
-	                resolve([false, message]);
+	                callback(false, message);
 	            }
 	        }
 
@@ -192,7 +192,7 @@ function checkLastCommand(msg) {
 	            result = await con.query(sql);
 
 	            console.log("[DB] 1 record inserted (lastCommand)");
-	            resolve(false, message);
+	            callback(false, message);
 	        }
 	    }
 	});
