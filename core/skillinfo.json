@@ -1,106 +1,96 @@
 {
-	"Active" : {
-		"Fortify" : {
-			"ManaCost" : "10",
-			"HealthCost" : "0",
-			"Turn" : "Attack",
-			"Cooldown" : "3",
-			"Actions" : [
-				{
-					"ApplyModifier" : {
-						"Target" : "Self",
-						"Name" : "modifier_fortify",
-						"Strength" : "%level",
-						"Duration" : "3"
-					}
+	"Active": {
+		"Fortify": {
+			"ManaCost": "10",
+			"HealthCost": "0",
+			"Turn": "Attack",
+			"Cooldown": "3",
+			"Actions": [{
+				"ApplyModifier": {
+					"Target": "Self",
+					"Name": "modifier_fortify",
+					"Strength": "%level",
+					"Duration": "3"
 				}
-			]
+			}]
 		},
-		"Blade Poison" : {
-			"ManaCost" : "10",
-			"HealthCost" : "0",
-			"Turn" : "AttackBonus",
-			"Cooldown" : "1",
-			"Actions" : [
-				{
-					"ApplyModifier" : {
-						"Target" : "Self",
-						"Name" : "modifier_poison_attack",
-						"Strength" : "%level",
-						"Duration" : "1"
-					}
+		"Blade Poison": {
+			"ManaCost": "10",
+			"HealthCost": "0",
+			"Turn": "AttackBonus",
+			"Cooldown": "1",
+			"Actions": [{
+				"ApplyModifier": {
+					"Target": "Self",
+					"Name": "modifier_poison_attack",
+					"Strength": "%level",
+					"Duration": "1"
 				}
-			]
+			}]
 		},
-		"Spark" : {
-			"ManaCost" : "5",
-			"HealthCost" : "0",
-			"Turn" : "Attack",
-			"Cooldown" : "3",
-			"Actions" : [
-				{
-					"DealDamage" : {
-						"Target" : "Enemy",
-						"MagicDamage" : "%level * 7",
-					},
+		"Spark": {
+			"ManaCost": "5",
+			"HealthCost": "0",
+			"Turn": "Attack",
+			"Cooldown": "3",
+			"Actions": [{
+				"DealDamage": {
+					"Target": "Enemy",
+					"MagicDamage": "%level * 7"
 				}
-			]
+			}]
 		},
-		"Heat Weapons" : {
-			"ManaCost" : "10",
-			"HealthCost" : "0",
-			"Turn" : "Attack",
-			"Cooldown" : "6 - (%level)",
-			"Actions" : [
-				{
-					"ApplyModifier" : {
-						"Target" : "Enemy",
-						"Name" : "modifier_disarm",
-						"Strength" : "%level",
-						"Duration" : "2"
-					}
+		"Heat Weapons": {
+			"ManaCost": "10",
+			"HealthCost": "0",
+			"Turn": "Attack",
+			"Cooldown": "6 - (%level)",
+			"Actions": [{
+				"ApplyModifier": {
+					"Target": "Enemy",
+					"Name": "modifier_disarm",
+					"Strength": "%level",
+					"Duration": "2"
 				}
-			]
+			}]
 		},
-		"Imposition of Hands" : {
-			"ManaCost" : "10",
-			"HealthCost" : "0",
-			"Turn" : "Attack",
-			"Cooldown" : "3",
-			"Actions" : [
-				{
-					"Heal" : {
-						"Target" : "Team",
-						"Amount" : "%level * 10"
-					}
+		"Imposition of Hands": {
+			"ManaCost": "10",
+			"HealthCost": "0",
+			"Turn": "Attack",
+			"Cooldown": "3",
+			"Actions": [{
+				"Heal": {
+					"Target": "Team",
+					"Amount": "%level * 10"
 				}
-			]
+			}]
 		}
 	},
-	"Passive" : {
-		"Flabby" : {
-			"Name" : "modifier_flabby",
-			"Strength" : "%level",
+	"Passive": {
+		"Flabby": {
+			"Name": "modifier_flabby",
+			"Strength": "%level"
 		},
-		"Parry" : {
-			"Name" : "modifier_parry",
-			"Strength" : "%level",
+		"Parry": {
+			"Name": "modifier_parry",
+			"Strength": "%level"
 		},
-		"Hidden" : {
-			"Name" : "modifier_hidden",
-			"Strength" : "%level",
+		"Hidden": {
+			"Name": "modifier_hidden",
+			"Strength": "%level"
 		},
-		"Distance" : {
-			"Name" : "modifier_distance",
-			"Strength" : "%level",
+		"Distance": {
+			"Name": "modifier_distance",
+			"Strength": "%level"
 		},
-		"Durable" : {
-			"Name" : "modifier_durable",
-			"Strength" : "%level",
+		"Durable": {
+			"Name": "modifier_durable",
+			"Strength": "%level"
 		},
-		"Faith" : {
-			"Name" : "modifier_faith",
-			"Strength" : "%level",
+		"Faith": {
+			"Name": "modifier_faith",
+			"Strength": "%level"
 		}
 	}
 }

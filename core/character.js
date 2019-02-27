@@ -68,7 +68,7 @@ async function createNew(con, userID, channel, input) {
  */
 async function show(con, userID, channel) {
 	try {
-		var sql = "SELECT userList.name AS userName, charList.name AS characterName, charList.level, charList.class FROM charList INNER JOIN userList ON charList.userID = userList.userID WHERE charList.active = 1 AND userList.userID = " + userID;
+		var sql = "SELECT userList.name AS userName, charList.name AS characterName, charList.level, charList.class, charList.experience FROM charList INNER JOIN userList ON charList.userID = userList.userID WHERE charList.active = 1 AND userList.userID = " + userID;
 	    var result = await con.query(sql);
 
         //check if there is an active character
@@ -77,7 +77,9 @@ async function show(con, userID, channel) {
 	       	var charName = "**" + result[0].characterName + "**";
 	       	var level = result[0].level;
 	       	var className = result[0].class;
+	       	var exp = result[0].experience;
 	       	var text = "<@" + userID + ">: You're currently playing as the " + className + " " + charName + " lvl " + level + ".";
+	       	text += " " + calculateNextExp(exp) + " more xp needed for level " + (level + 1);
 	       	printMessage(channel, text); 
 
        	} else {
@@ -208,6 +210,39 @@ async function select(con, userID, channel, input) {
 		console.log(e);
 		console.log("Invalid Arguments")
 	}
+}
+
+async function addExperience(con, user, channel, exp) {
+	const char = await getActive(con, user.id);
+	var sql = "SELECT name, level, experience FROM charList WHERE cNr = " + char;
+	var result = await con.query(sql);
+
+	if (result.length > 0) {
+		var newExp = Number(result[0].experience) + exp;
+		var newLevel = calculateLevel(newExp);
+
+		if (newLevel > result[0].level) {
+			levelUp(con, user, channel, newLevel, name, char);
+		}
+
+		sql = "UPDATE charList SET level = " + newLevel + ", experience = " + newExp + " WHERE cNr = " + char;
+		await con.query(sql);
+	}
+}
+
+function calculateLevel(exp) {
+	var level = (Math.sqrt( 100 * (2 * exp + 25)) + 50) / 100;
+	return Math.floor(level);
+}
+
+function calculateNextExp(exp) {
+	var newLevel = calculateLevel(exp) + 1;
+	var newExp = ((Math.pow(newLevel, 2) + newLevel) / 2) * 100 - (newLevel * 100);
+	return Math.floor(newExp - exp);
+}
+
+function levelUp(con, user, channel, level, name, char) {
+	printMessage(channel, "Congratulation! You reached level " + newLevel + " with " + name);
 }
 
 /**
@@ -468,3 +503,4 @@ module.exports.getActive = getActive;
 module.exports.showEquip = showEquip;
 module.exports.equip = equip;
 module.exports.getEquip = getEquip;
+module.exports.addExperience = addExperience;

@@ -11,6 +11,8 @@ class Unit {
 	 */
 	initPlayer(con, user) {
 		return new Promise(async (resolve, reject) => {
+			this.con = con;
+			this.user = user;
 			const character = require('./../character.js');
 			const helper = require('./../helperfuncs.js');
 			var equip = await character.getEquip(con, user);
@@ -33,7 +35,7 @@ class Unit {
 				}
 			})
 
-			var sql = "SELECT name AS charName, level, class AS charClass, modifiers FROM charList WHERE active = 1 AND userID = " + user.id;
+			var sql = "SELECT name AS charName, level, class AS charClass FROM charList WHERE active = 1 AND userID = " + user.id;
 			var result = await con.query(sql);
 
 			if (result.length > 0) {
@@ -62,6 +64,7 @@ class Unit {
 		var hp = this.calculateStartHP(unitInfo.BaseHP, false);
 		var mana = this.calculateStartMana(unitInfo.BaseMana, false);
 		this.creepDamage = [Number(unitInfo.PhysAttack), Number(unitInfo.MagicAttack), Number(unitInfo.PureAttack)];
+		this.expVal = Number(unitInfo.Exp);
 		this.setVals(name, "creep", level, unitInfo.MovePattern, hp, mana, unitInfo.AttackPattern, unitInfo.DefendPattern);
 		this.loadSkills(unitInfo.Skills);
 	}
@@ -207,6 +210,16 @@ class Unit {
 		return this.unitClass;
 	}
 	/**
+	 * returns the amount of experience this unit has
+	 * @return {int} experience
+	 */
+	getExp() {
+		if (this.isCreep()) {
+			return this.expVal;
+		}
+		return 0;
+	}
+	/**
 	 * decides if this unit can survive gievn damage
 	 * @param  {int} damage damage to test
 	 * @return {Boolean}        status
@@ -242,6 +255,15 @@ class Unit {
 			return true;
 		}
 		return false;
+	}
+	/**
+	 * gives experience to this player (writes to database)
+	 * @param  {int} exp amount of experience
+	 */
+	async giveXP(exp) {
+		const character = require("./../character.js");
+		await character.addExperience(this.con, this.user, this.channel, exp);
+		console.log("[UT] Added " + exp + " XP to " + this.toString());
 	}
 	/**
 	 * deals damage to this unit

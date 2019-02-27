@@ -176,10 +176,22 @@ class FightWindow {
 		var text = this.getFightDescription(this.player, this.enemies, this.log, this.turn);
 		if (end) {
 			text += "\n\n -> The Battle is Over! <-";
+			battleEnd(true);
 			this.message.clearReactions();
 		}
 		this.embed.setDescription(text);
 	    this.message.edit(this.embed);
+	}
+
+	battleEnd(win) {
+		if (win) {
+			printMessage(this.channel, "You won a battle and gained " + exp + " XP!");
+			var exp = 0;
+			this.enemies.forEach(enemy => {
+				exp += enemy.getExp();
+			});
+			this.player.giveXP(exp);
+		}
 	}
 
 	reactTo(emoji) {

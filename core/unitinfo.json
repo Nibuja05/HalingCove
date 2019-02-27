@@ -1,144 +1,137 @@
 {
-	"player" : {
-		"Unexperienced Adventurer" : {
-			"BaseHP" : "50",
-			"BaseMana" : "0",
-			"Class" : "None",
-			"Parent" : "",
-			"Skills" : {
-				"Active" : {
+	"player": {
+		"Unexperienced Adventurer": {
+			"BaseHP": "50",
+			"BaseMana": "0",
+			"Class": "None",
+			"Parent": "",
+			"Skills": {
+				"Active": {},
+				"Passive": {}
+			}
+		},
+		"Backup Guard": {
+			"BaseHP": "75",
+			"BaseMana": "10",
+			"Class": "Defender",
+			"Parent": "Unexperienced Adventurer",
+			"Skills": {
+				"Active": {
+					"Fortify": "1"
 				},
-				"Passive" : {		
+				"Passive": {
+					"Parry": "1"
 				}
 			}
 		},
-		"Backup Guard" : {
-			"BaseHP" : "75",
-			"BaseMana" : "10",
-			"Class" : "Defender",
-			"Parent" : "Unexperienced Adventurer",
-			"Skills" : {
-				"Active" : {
-					"Fortify" : "1"
+		"Road Thief": {
+			"BaseHP": "50",
+			"BaseMana": "20",
+			"Class": "Assasin",
+			"Parent": "Unexperienced Adventurer",
+			"Skills": {
+				"Active": {
+					"Blade Poison": "1"
 				},
-				"Passive" : {		
-					"Parry" : "1"
+				"Passive": {
+					"Hidden": "1"
 				}
 			}
 		},
-		"Road Thief" : {
-			"BaseHP" : "50",
-			"BaseMana" : "20",
-			"Class" : "Assasin",
-			"Parent" : "Unexperienced Adventurer",
-			"Skills" : {
-				"Active" : {
-					"Blade Poison" : "1"
+		"Magic Pupil": {
+			"BaseHP": "40",
+			"BaseMana": "40",
+			"Class": "Mage",
+			"Parent": "Unexperienced Adventurer",
+			"Skills": {
+				"Active": {
+					"Spark": "1",
+					"Hot Weapons": "1"
 				},
-				"Passive" : {		
-					"Hidden" : "1"
+				"Passive": {
+					"Distance": "1"
 				}
 			}
 		},
-		"Magic Pupil" : {
-			"BaseHP" : "40",
-			"BaseMana" : "40",
-			"Class" : "Mage",
-			"Parent" : "Unexperienced Adventurer",
-			"Skills" : {
-				"Active" : {
-					"Spark" : "1",
-					"Hot Weapons" : "1"
-				},
-				"Passive" : {	
-					"Distance" : "1"	
+		"Daredevil": {
+			"BaseHP": "90",
+			"BaseMana": "0",
+			"Class": "Warrior",
+			"Parent": "Unexperienced Adventurer",
+			"Skills": {
+				"Active": {},
+				"Passive": {
+					"Durable": "1"
 				}
 			}
 		},
-		"Daredevil" : {
-			"BaseHP" : "90",
-			"BaseMana" : "0",
-			"Class" : "Warrior",
-			"Parent" : "Unexperienced Adventurer",
-			"Skills" : {
-				"Active" : {
-				},
-				"Passive" : {	
-					"Durable" : "1"
+		"Poacher": {
+			"BaseHP": "50",
+			"BaseMana": "0",
+			"Class": "Hunter",
+			"Parent": "Unexperienced Adventurer",
+			"Skills": {
+				"Active": {},
+				"Passive": {
+					"Distance": "2"
 				}
 			}
 		},
-		"Poacher" : {
-			"BaseHP" : "50",
-			"BaseMana" : "0",
-			"Class" : "Hunter",
-			"Parent" : "Unexperienced Adventurer",
-			"Skills" : {
-				"Active" : {
+		"Pilgrim": {
+			"BaseHP": "65",
+			"BaseMana": "30",
+			"Class": "Priest",
+			"Parent": "Unexperienced Adventurer",
+			"Skills": {
+				"Active": {
+					"Imposition of Hands": "1"
 				},
-				"Passive" : {	
-					"Distance" : "2"
-				}
-			}
-		},
-		"Pilgrim" : {
-			"BaseHP" : "65",
-			"BaseMana" : "30",
-			"Class" : "Priest",
-			"Parent" : "Unexperienced Adventurer",
-			"Skills" : {
-				"Active" : {
-					"Imposition of Hands" : "1"
-				},
-				"Passive" : {	
-					"Faith" : "1"
+				"Passive": {
+					"Faith": "1"
 				}
 			}
 		}
 	},
-	"creep" : {
-		"Rat" : {
-			"BaseHP" : "10",
-			"BaseMana" : "0",
-			"PhysAttack" : "1",
-			"MagicAttack" : "0",
-			"PureAttack" : "0",
-			"GrowSpeed" : "1",
-			"MovePattern" : "Fighter",
-			"AttackPattern" : [
+	"creep": {
+		"Rat": {
+			"BaseHP": "10",
+			"BaseMana": "0",
+			"PhysAttack": "1",
+			"MagicAttack": "0",
+			"PureAttack": "0",
+			"GrowSpeed": "1",
+			"MovePattern": "Fighter",
+			"AttackPattern": [
 				"Middle",
 				"Low"
 			],
-			"DefendPattern" : [
-			],
-			"Skills" : {
-				"Active" : {
-				},
-				"Passive" : {		
-				}
-			}
+			"DefendPattern": [],
+			"Skills": {
+				"Active": {},
+				"Passive": {}
+			},
+			"Exp": "10"
 		},
-		"Slime" : {
-			"BaseHP" : "25",
-			"BaseMana" : "0",
-			"PhysAttack" : "2",
-			"MagicAttack" : "0",
-			"PureAttack" : "0",
-			"GrowSpeed" : "1",
-			"MovePattern" : "Fighter",
-			"AttackPattern" : [
+		"Slime": {
+			"BaseHP": "25",
+			"BaseMana": "0",
+			"PhysAttack": "2",
+			"MagicAttack": "0",
+			"PureAttack": "0",
+			"GrowSpeed": "1",
+			"MovePattern": "Fighter",
+			"AttackPattern": [
 				"Middle",
 				"Low"
 			],
-			"DefendPattern" : [
-			],
-			"Skills" : {
-				"Active" : {
-				},
-				"Passive" : {		
-					"Flabby" : "1"
+			"DefendPattern": [],
+			"Skills": {
+				"Active": {},
+				"Passive": {
+					"Flabby": "1"
 				}
-			}
+			},
+			"Exp": "20"
 		}
 	}
 }

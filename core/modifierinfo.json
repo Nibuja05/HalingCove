@@ -1,168 +1,141 @@
 {
-	"modifier_fortify" : {
-		"Name" : "Fortify",
-		"Debuff" : "0",
-		"Purgeable" : "0",
-		"Events" : [
-		],
-		"Bonuses" : {
-			"BodyPhysArmor" : "%val * 20",
-			"HeadPhysArmor" : "%val * 20",
-			"LegPhysArmor" : "%val * 20"
+	"modifier_fortify": {
+		"Name": "Fortify",
+		"Debuff": "0",
+		"Purgeable": "0",
+		"Events": [],
+		"Bonuses": {
+			"BodyPhysArmor": "%val * 20",
+			"HeadPhysArmor": "%val * 20",
+			"LegPhysArmor": "%val * 20"
 		}
 	},
-	"modifier_poison_attack" : {
-		"Name" : "Poisoned Blade",
-		"Debuff" : "0",
-		"Purgeable" : "1",
-		"Events" : [
-			{
-				"OnAttackLanded" : [
-					{
-						"ApplyModifier" : {
-							"Target" : "Enemy",
-							"Name" : "modifier_weak_poison",
-							"Strength" : "%val",
-							"Duration" : "3"
-						},
-						"EventMessage" : "%parent poisened %target!"
-					}
-				]
-			}
-		],
-		"Bonuses" : {
-			"MagicAttack" : "%val * 5"
+	"modifier_poison_attack": {
+		"Name": "Poisoned Blade",
+		"Debuff": "0",
+		"Purgeable": "1",
+		"Events": [{
+			"OnAttackLanded": [{
+				"ApplyModifier": {
+					"Target": "Enemy",
+					"Name": "modifier_weak_poison",
+					"Strength": "%val",
+					"Duration": "3"
+				},
+				"EventMessage": "%parent poisened %target!"
+			}]
+		}],
+		"Bonuses": {
+			"MagicAttack": "%val * 5"
 		}
 	},
-	"modifier_weak_poison" : {
-		"Name" : "Weak Poison",
-		"Debuff" : "1",
-		"Purgeable" : "1",
-		"Events" : [
-			{
-				"OnTurnStart" : [
-					{
-						"DealDamage" : {
-							"Target" : "Self",
-							"MagicDamage" : "%val * 2",
-						},
-						"EventMessage" : "%parent suffered from poison and took {%val * 2} damage"
-					}
-				]
-			}
-		]
+	"modifier_weak_poison": {
+		"Name": "Weak Poison",
+		"Debuff": "1",
+		"Purgeable": "1",
+		"Events": [{
+			"OnTurnStart": [{
+				"DealDamage": {
+					"Target": "Self",
+					"MagicDamage": "%val * 2"
+				},
+				"EventMessage": "%parent suffered from poison and took {%val * 2} damage"
+			}]
+		}]
 	},
-	"modifier_flabby" : {
-		"Name" : "Flabby",
-		"Debuff" : "0",
-		"Purgeable" : "0",
-		"Events" : [
-			{
-				"OnTakeDamage" : [
-					{
-						"DamageType" : "Phys",
-						"Random" : {
-							"Chance" : "%val * 20",
-							"Actions" : [
-								{
-									"BlockDamage" : {
-										"Count" : "1",
-										"PhysBlockPerc" : "100",
-										"MagicBlockPerc" : "100",
-										"PureBlockPerc" : "100",
-									}
-								}
-							],
-							"ActionMessage" : "%parent was too flabby to be hit!"
-						},
-					}
-				]
-			}
-		]
+	"modifier_flabby": {
+		"Name": "Flabby",
+		"Debuff": "0",
+		"Purgeable": "0",
+		"Events": [{
+			"OnTakeDamage": [{
+				"DamageType": "Phys",
+				"Random": {
+					"Chance": "%val * 20",
+					"Actions": [{
+						"BlockDamage": {
+							"Count": "1",
+							"PhysBlockPerc": "100",
+							"MagicBlockPerc": "100",
+							"PureBlockPerc": "100"
+						}
+					}],
+					"ActionMessage": "%parent was too flabby to be hit!"
+				}
+			}]
+		}]
 	},
-	"modifier_parry" : {
-		"Name" : "Parry",
-		"Debuff" : "0",
-		"Purgeable" : "1",
-		"Events" : [
-			{
-				"OnTakeDamage" : [
-					{
-						"DamageType" : "Phys",
-						"Random" : {
-							"Chance" : "25 + (%val * 10)",
-							"Actions" : [
-								{
-									"BlockDamage" : {
-										"Count" : "1",
-										"PhysBlockPerc" : "75",
-									}
-								}
-							],
-							"ActionMessage" : "%parent parried this attack and reduced the damage!"
-						},
-					}
-				]
-			}
-		]
+	"modifier_parry": {
+		"Name": "Parry",
+		"Debuff": "0",
+		"Purgeable": "1",
+		"Events": [{
+			"OnTakeDamage": [{
+				"DamageType": "Phys",
+				"Random": {
+					"Chance": "25 + (%val * 10)",
+					"Actions": [{
+						"BlockDamage": {
+							"Count": "1",
+							"PhysBlockPerc": "75"
+						}
+					}],
+					"ActionMessage": "%parent parried this attack and reduced the damage!"
+				}
+			}]
+		}]
 	},
-	"modifier_hidden" : {
-		"Name" : "Hidden",
-		"Debuff" : "0",
-		"Purgeable" : "0",
-		"Events" : [
-			{
-				"OnTakeDamage" : [
-					{
-						"DamageType" : "Magic",
-						"Random" : {
-							"Chance" : "65",
-							"Actions" : [
-								{
-									"BlockDamage" : {
-										"Count" : "1",
-										"MagicBlockPerc" : "30 + (%val * 10)",
-									}
-								}
-							],
-							"ActionMessage" : "%parent is hidden and takes less magical damage!"
-						},
-					}
-				]
-			}
-		]
+	"modifier_hidden": {
+		"Name": "Hidden",
+		"Debuff": "0",
+		"Purgeable": "0",
+		"Events": [{
+			"OnTakeDamage": [{
+				"DamageType": "Magic",
+				"Random": {
+					"Chance": "65",
+					"Actions": [{
+						"BlockDamage": {
+							"Count": "1",
+							"MagicBlockPerc": "30 + (%val * 10)"
+						}
+					}],
+					"ActionMessage": "%parent is hidden and takes less magical damage!"
+				}
+			}]
+		}]
 	},
-	"modifier_disarm" : {
-		"Name" : "Disarmed",
-		"Debuff" : "1",
-		"Purgeable" : "1",
-		"States" : [
+	"modifier_disarm": {
+		"Name": "Disarmed",
+		"Debuff": "1",
+		"Purgeable": "1",
+		"States": [
 			"Disarmed"
 		]
 	},
-	"modifier_distance" : {
-		"Name" : "At Distance",
-		"Debuff" : "0",
-		"Purgeable" : "0",
-		"Bonuses" : {
-			"Range" : "%val * 10"
+	"modifier_distance": {
+		"Name": "At Distance",
+		"Debuff": "0",
+		"Purgeable": "0",
+		"Bonuses": {
+			"Range": "%val * 10"
 		}
 	},
-	"modifier_durable" : {
-		"Name" : "Durable",
-		"Debuff" : "0",
-		"Purgeable" : "0",
-		"Bonuses" : {
-			"InDamageAmplify" : "-(20 + (%val * 5))",
-			"HealthRegen" : "%val * 2"
+	"modifier_durable": {
+		"Name": "Durable",
+		"Debuff": "0",
+		"Purgeable": "0",
+		"Bonuses": {
+			"InDamageAmplify": "-(20 + (%val * 5))",
+			"HealthRegen": "%val * 2"
 		}
 	},
-	"modifier_faith" : {
-		"Name" : "Faithful",
-		"Debuff" : "0",
-		"Purgeable" : "0",
-		"Bonuses" : {
-			"ManaRegen" : "1 + %val"
+	"modifier_faith": {
+		"Name": "Faithful",
+		"Debuff": "0",
+		"Purgeable": "0",
+		"Bonuses": {
+			"ManaRegen": "1 + %val"
 		}
 	}
 }
