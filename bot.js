@@ -242,6 +242,7 @@ function manageDevCommands(msg, args, confirm) {
 	var item = require('./core/item.js');
 	var fight = require('./core/fight.js');
 	var explore = require('./core/explore.js');
+	var character = require('./core/character.js');
     var cmd = args[0];
     args = args.splice(1);
 
@@ -252,9 +253,12 @@ function manageDevCommands(msg, args, confirm) {
         case 'test':
             console.log("[DEV] Test!")
             break;
-        case 'createRandomItem':
+        case 'createRandomItems':
             item.createRandomMultiple(con, channel, user, args);
             break;
+        case 'createRandomItem':
+        	item.createSpecific(con, channel, user, args);
+        	break;
         case 'testFight':
         	fight.start(con, user, channel);
         	break;
