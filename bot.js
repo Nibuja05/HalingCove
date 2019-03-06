@@ -268,6 +268,10 @@ function manageDevCommands(msg, args, confirm) {
         case 'playerTest':
         	fight.test(con, user, channel);
         	break;
+        case 'classChange':
+        	character.changeClass(con, user, channel, args);
+        	break;
+
     }
 }
 
