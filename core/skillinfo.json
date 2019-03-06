@@ -1,6 +1,7 @@
 {
 	"Active": {
 		"Fortify": {
+			"Description" : "Hardens the user's entire equipment to make it more resistant to damage.",
 			"ManaCost": "10",
 			"HealthCost": "0",
 			"Turn": "Attack",
@@ -15,6 +16,7 @@
 			}]
 		},
 		"Blade Poison": {
+			"Description" : "Soak the weapon in a tonic to poison enemies who have been hit.",
 			"ManaCost": "10",
 			"HealthCost": "0",
 			"Turn": "AttackBonus",
@@ -29,6 +31,7 @@
 			}]
 		},
 		"Spark": {
+			"Description" : "Ejects a small spark towards the opponent to damage him.",
 			"ManaCost": "5",
 			"HealthCost": "0",
 			"Turn": "Attack",
@@ -41,6 +44,7 @@
 			}]
 		},
 		"Heat Weapons": {
+			"Description" : "Heats an opponent's weapons to make them unusable for a short time.",
 			"ManaCost": "10",
 			"HealthCost": "0",
 			"Turn": "Attack",
@@ -55,6 +59,7 @@
 			}]
 		},
 		"Imposition of Hands": {
+			"Description" : "Heals minor injuries from all allies.",
 			"ManaCost": "10",
 			"HealthCost": "0",
 			"Turn": "Attack",
@@ -69,26 +74,32 @@
 	},
 	"Passive": {
 		"Flabby": {
+			"Description" : "The flabby body allows some damage to be completely negated.",
 			"Name": "modifier_flabby",
 			"Strength": "%level"
 		},
 		"Parry": {
+			"Description" : "A parade can sometimes weaken physical attacks.",
 			"Name": "modifier_parry",
 			"Strength": "%level"
 		},
 		"Hidden": {
+			"Description" : "Through clever hiding it is possible to be hit only partially by magic damage.",
 			"Name": "modifier_hidden",
 			"Strength": "%level"
 		},
 		"Distance": {
+			"Description" : "Starts the fight at a distance to gain a strategic advantage.",
 			"Name": "modifier_distance",
 			"Strength": "%level"
 		},
 		"Durable": {
+			"Description" : "Reinforces the body massively to withstand more strain.",
 			"Name": "modifier_durable",
 			"Strength": "%level"
 		},
 		"Faith": {
+			"Description" : "Through your strict faith you are granted the gift of increased mana regeneration.",
 			"Name": "modifier_faith",
 			"Strength": "%level"
 		}
