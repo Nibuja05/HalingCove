@@ -102,6 +102,8 @@ class FightWindow {
 		this.emitter = new this.events.EventEmitter();
 		this.addListener();
 
+		this.end = false;
+
 		this.log = new BattleLog(20, this.emitter);
 		player.addLog(this.log);
 		enemies.forEach(enemy => enemy.addLog(this.log));
@@ -174,9 +176,10 @@ class FightWindow {
 
 	update(end = false) {
 		var text = this.getFightDescription(this.player, this.enemies, this.log, this.turn);
-		if (end) {
+		if (end && !this.end) {
+			this.end = true;
 			text += "\n\n -> The Battle is Over! <-";
-			battleEnd(true);
+			this.battleEnd(true);
 			this.message.clearReactions();
 		}
 		this.embed.setDescription(text);
@@ -185,11 +188,11 @@ class FightWindow {
 
 	battleEnd(win) {
 		if (win) {
-			printMessage(this.channel, "You won a battle and gained " + exp + " XP!");
 			var exp = 0;
 			this.enemies.forEach(enemy => {
 				exp += enemy.getExp();
 			});
+			printMessage(this.channel, "You won a battle and gained " + exp + " XP!");
 			this.player.giveXP(exp);
 		}
 	}
@@ -302,7 +305,6 @@ class FightWindow {
 				this.turn = "enemy";
 				this.showSkills = false;
 
-				console.log("<--- Enemy Turn --->");
 				this.log.add("\n<--- Enemy Turn --->\n")
 				this.enemies.forEach(enemy => {
 					enemy.startTurn();
@@ -313,7 +315,6 @@ class FightWindow {
 					this.turn = "player";
 				});
 				this.showSkills = false;
-				console.log("<--- Player Turn --->");
 				this.log.add("\n<--- Player Turn --->\n")
 				this.player.startTurn();
 			}
@@ -483,9 +484,9 @@ class FightWindow {
 }
 
 function printMessage(channel, text) {
-	channel.send(text)
-	.then(message => console.log(`Sent message: ${message.content}`))
-	.catch(console.error);
+    channel.send(text)
+  	.then(message => console.log("\x1b[36m%s\x1b[0m", `Sent message: ${message.content}`))
+  	.catch(console.error);
 }
 
 function getRandomElement(arr) {

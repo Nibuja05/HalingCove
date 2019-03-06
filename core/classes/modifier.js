@@ -38,11 +38,9 @@ class Modifier {
 	remove() {
 		this.parent.removeModifier(this);
 		this.parent.battleLog.addDelayed(this.parent.toString() + " is no longer affected by " + this.showName);
-		console.log(this.Emitter.listenerCount("OnTurnStart"));
 		this.listener.forEach(listener => {
 			this.Emitter.removeListener(listener.event, listener.func);
 		});
-		console.log(this.Emitter.listenerCount("OnTurnStart"));
 	}
 	/**
 	 * adds all important event listener for this modifier
