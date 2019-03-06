@@ -25,7 +25,7 @@ async function createNew(con, userID, channel, input) {
 
 	    //check if this character already exists for the user
 		if (result.length == 0) {
-			console.log("New character, named " + name)
+			console.log("[CH] New character, named " + name)
 
 			//set all characters to inactive
 			sql = "SELECT cNr, active FROM charList WHERE active = 1 AND userID = " + userID + "";
@@ -39,7 +39,7 @@ async function createNew(con, userID, channel, input) {
 			//insert the new character and set it to active
 			sql = "INSERT INTO charList (userID, name, level, class, active) VALUES ('" + userID + "', '" + name + "', '1', 'Unexperienced Adventurer', '1')";
 			result = await con.query(sql);
-			console.log("[DB] 1 record inserted (charList)");
+			console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record inserted (charList)");
 			show(con, userID, channel)
 
 		} else {
@@ -124,7 +124,7 @@ async function deleteChar(con, userID, channel, input, confirm) {
 			sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + userID;
             result = await con.query(sql);
 
-            console.log("[DB] 1 record updated (lastCommand)")
+            console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (lastCommand)")
             var text = "Deleting **" + name + "** canceled"
             printMessage(channel, text);
 			return;
@@ -135,19 +135,19 @@ async function deleteChar(con, userID, channel, input, confirm) {
 			console.log("Deleting the character " + name);
 			sql = "DELETE FROM charList WHERE name = '" + name +"' AND userID = " + userID + "";
 			result = await con.query(sql);
-			console.log("[DB] 1 record deleted (charList)");
+			console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record deleted (charList)");
 
 			var text = "<@" + userID + ">: Succesfully deleted the character " + name + "."; 
 			printMessage(channel, text);
 			sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + userID;
             result = await con.query(sql);
-            console.log("[DB] 1 record updated (lastCommand)")
+            console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (lastCommand)")
 
         //if there is no confirmation yet, ask the user if he wants to continue
 		} else if(found == true && confirm == false) {
 			sql = "UPDATE lastCommand SET optValues = 'confirm' WHERE userID = " + userID;
 			result = await con.query(sql);
-            console.log("[DB] 1 record updated (lastCommand)")
+            console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (lastCommand)")
             var text = "Are you sure you want to delete **" + name + "**?";
             printMessage(channel, text)
 		}
@@ -187,6 +187,8 @@ async function select(con, userID, channel, input) {
 					result = await con.query(sql);
 					sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar;
 					result = await con.query(sql);
+					console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (charList)");
+
 					show(con, userID, channel);
 
 				} else {
@@ -198,6 +200,8 @@ async function select(con, userID, channel, input) {
 			} else {
 				sql = "UPDATE charList SET active = 1 WHERE cNr = " + newChar;
 				result = await con.query(sql);
+				console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (charList)");
+
 				show(con, userID, channel);
 			}
 
@@ -222,11 +226,13 @@ async function addExperience(con, user, channel, exp) {
 		var newLevel = calculateLevel(newExp);
 
 		if (newLevel > result[0].level) {
-			levelUp(con, user, channel, newLevel, name, char);
+			levelUp(con, user, channel, newLevel, result[0].name, char);
 		}
 
 		sql = "UPDATE charList SET level = " + newLevel + ", experience = " + newExp + " WHERE cNr = " + char;
 		await con.query(sql);
+
+		console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (charList)");
 	}
 }
 
@@ -242,7 +248,7 @@ function calculateNextExp(exp) {
 }
 
 function levelUp(con, user, channel, level, name, char) {
-	printMessage(channel, "Congratulation! You reached level " + newLevel + " with " + name);
+	printMessage(channel, "Congratulation! You reached level " + level + " with " + name);
 }
 
 /**
@@ -309,6 +315,8 @@ function getEquip(con, user) {
 		if (result.length == 0) {
 			sql = "INSERT INTO charEquip (cNr, name) VALUES (" + char + ", 'base')";
 			result = await con.query(sql);
+
+			console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record inserted (charEquip)");
 		}
 		var equip = {};
 		var name = "";
@@ -436,12 +444,10 @@ async function equip(con, user, channel, input) {
 				sql = "UPDATE charEquip SET " + slotName + " = " + item.ID + " WHERE cNr = " + item.cNr;
 				await con.query(sql);
 				printMessage(channel, "Equipped " + item.itemName);
+				console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (charEquip)");
 
-				console.log(result[0].slot);
 				if (result[0].slot == 3) {
-					console.log("OPT ITEM")
 					sql = "UPDATE charEquip SET " + optItem + " = " + 2 + " WHERE cNr = " + item.cNr;
-					console.log(sql);
 					result = await con.query(sql);
 				}
 
@@ -464,6 +470,7 @@ async function equip(con, user, channel, input) {
 				sql = "UPDATE charEquip SET " + slotName[0] + " = " + item.ID + ", " + slotName[1] + " = " + item.ID + " WHERE cNr = " + item.cNr;
 				result = await con.query(sql);
 				printMessage(channel, "Equipped " + item.itemName);
+				console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (charEquip)");
 			}
 
 		} else {
@@ -505,7 +512,7 @@ function getActive(con, userID) {
  */
 function printMessage(channel, text) {
     channel.send(text)
-  	.then(message => console.log(`Sent message: ${message.content}`))
+  	.then(message => console.log("\x1b[36m%s\x1b[0m", `Sent message: ${message.content}`))
   	.catch(console.error);
 }
 
@@ -520,3 +527,4 @@ module.exports.showEquip = showEquip;
 module.exports.equip = equip;
 module.exports.getEquip = getEquip;
 module.exports.addExperience = addExperience;
+module.exports.changeClass = changeClass;
