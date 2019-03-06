@@ -264,7 +264,23 @@ async function showAll(con, userID, channel) {
 	printMessage(channel, text);
 }
 
+async function changeClass(con, user, channel, input) {
 
+	const classList = require('./unitinfo.json').player;
+	var newClass = input.join(" ");
+	console.log(newClass);
+	if (newClass in classList) {
+		const char = await getActive(con, user.id);
+		var sql = "UPDATE charList SET class = '" + newClass + "' WHERE cNr = " + char;
+		var result = await con.query(sql);
+		console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (charList)");
+		
+		printMessage(channel, "Changed Class to " + newClass + "!");
+	} else {
+		printMessage(channel, "Cannot change to the class " + newClass + "!");
+	}
+
+}
 
 async function showEquip(con, user, channel) {
 	
