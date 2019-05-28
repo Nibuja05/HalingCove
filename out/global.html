@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: BattleLog</title>
+    <title>JSDoc: Global</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: BattleLog</h1>
+    <h1 class="page-title">Global</h1>
 
     
 
@@ -28,9 +28,7 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>BattleLog<span class="signature">(maxLength)</span><span class="type-signature"></span></h2>
-        
-            <div class="class-description">A class to store the log entries of an ongoing battle</div>
+        <h2></h2>
         
     
 </header>
@@ -40,81 +38,7 @@
     
         
 
-    
-    <h2>Constructor</h2>
-    
-
-    
-    <h4 class="name" id="BattleLog"><span class="type-signature"></span>new BattleLog<span class="signature">(maxLength)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    creates a new BattleLog with a maximum length, queue like behavior
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
         
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>maxLength</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">int</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">maximum length of log</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
 
 
 <dl class="details">
@@ -144,11 +68,6 @@
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="classes_helper.js.html">classes/helper.js</a>, <a href="classes_helper.js.html#line5">line 5</a>
-    </li></ul></dd>
-    
 
     
 
@@ -158,22 +77,7 @@
 </dl>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        
     
     </div>
 
@@ -200,7 +104,7 @@
     
 
     
-    <h4 class="name" id="add"><span class="type-signature"></span>add<span class="signature">(newText)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="applyModifier"><span class="type-signature"></span>applyModifier<span class="signature">(name, target, strength, duration)</span><span class="type-signature"></span></h4>
     
 
     
@@ -208,7 +112,7 @@
 
 
 <div class="description">
-    add new text to this log, will overwrite old text
+    apllies a modifier to a given unit, with a certain strength for a duration
 </div>
 
 
@@ -244,13 +148,13 @@
 
         <tr>
             
-                <td class="name"><code>newText</code></td>
+                <td class="name"><code>name</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 
 
             
@@ -260,7 +164,76 @@
 
             
 
-            <td class="description last">new multiline text to enter</td>
+            <td class="description last">name of the modifier</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>target</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Unit.html">Unit</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">target unit</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strength</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">strength of the modifier</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>duration</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">duration in turn</td>
         </tr>
 
     
@@ -301,7 +274,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="classes_helper.js.html">classes/helper.js</a>, <a href="classes_helper.js.html#line27">line 27</a>
+        <a href="fightactions.js.html">fightactions.js</a>, <a href="fightactions.js.html#line11">line 11</a>
     </li></ul></dd>
     
 
@@ -335,7 +308,7 @@
     
 
     
-    <h4 class="name" id="getCurrentLines"><span class="type-signature"></span>getCurrentLines<span class="signature">()</span><span class="type-signature"> &rarr; {int}</span></h4>
+    <h4 class="name" id="getTarget"><span class="type-signature"></span>getTarget<span class="signature">(targetType, target, owner)</span><span class="type-signature"> &rarr; {<a href="Unit.html">Unit</a>}</span></h4>
     
 
     
@@ -343,7 +316,210 @@
 
 
 <div class="description">
-    returns the length of this log
+    gets the actual target from the 'Target' string and the optional target unit
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>targetType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">type, defines in the json</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>target</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Unit.html">Unit</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">optional target unit</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>owner</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Unit.html">Unit</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">the unit this skill belongs to</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="fightactions.js.html">fightactions.js</a>, <a href="fightactions.js.html#line28">line 28</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    the actual target(s) of this skill
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Unit.html">Unit</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="showHelp"><span class="type-signature"></span>showHelp<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Several functions to display help / tutorials
 </div>
 
 
@@ -387,7 +563,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="classes_helper.js.html">classes/helper.js</a>, <a href="classes_helper.js.html#line20">line 20</a>
+        <a href="help.js.html">help.js</a>, <a href="help.js.html#line6">line 6</a>
     </li></ul></dd>
     
 
@@ -410,136 +586,6 @@
 
 
 
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    length of this log
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">int</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="toString"><span class="type-signature"></span>toString<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    return the battleLog as one string
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="classes_helper.js.html">classes/helper.js</a>, <a href="classes_helper.js.html#line65">line 65</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    multiline battleLog
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">String</span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 

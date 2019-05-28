@@ -33,11 +33,13 @@
 class BattleLog{
 	/**
 	 * creates a new BattleLog with a maximum length, queue like behavior
-	 * @param  {int} 	axLength 	maximum length of log
+	 * @param  {int} 	maxLength 	maximum length of log
 	 */
-	constructor(maxLen) {
+	constructor(maxLen, emitter) {
 		this.maxLen = maxLen;
 		this.cont = [];
+		this.emitter = emitter;
+		this.delayedCont = [];
 	}
 	/**
 	 * returns the length of this log
@@ -55,6 +57,10 @@ class BattleLog{
 		for (var i = 0; i &lt; newArr.length; i++) {
 			this.cont.splice(0, 0, newArr[i]);
 		}
+		for (var i = 0; i &lt; this.delayedCont.length; i++) {
+			this.cont.splice(0, 0, this.delayedCont[i]);
+		}
+		this.delayedCont = [];
 		var lineCount = 0;
 		var maxIndex = this.cont.length;
 		for (var i = 0; i &lt; this.cont.length; i++) {
@@ -65,6 +71,13 @@ class BattleLog{
 			}
 		}
 		this.cont.splice(maxIndex, (this.cont.length - maxIndex + 1));
+		this.emitter.emit("Update");
+	}
+	addDelayed(newText) {
+		var newArr = newText.split("\n");
+		for (var i = 0; i &lt; newArr.length; i++) {
+			this.delayedCont.push(newArr[i]);
+		}
 	}
 	measureElement(elem) {
 		var n = 50; //maximum line length, limited to 50
@@ -86,7 +99,11 @@ class BattleLog{
 			if (lineCount > this.maxLen) {
 				break;
 			} else {
-				text += "- " + this.cont[i] + "\n";
+				if (this.cont[i] == "") {
+					text += "\n";
+				} else {
+					text += "- " + this.cont[i] + "\n";
+				}
 			}
 		}
 		var count = this.maxLen - lineCount;
@@ -97,7 +114,508 @@ class BattleLog{
 	}
 }
 
-module.exports.BattleLog = BattleLog;</code></pre>
+class FightWindow {
+
+	constructor(channel, title, color, origUser, player, enemies) {
+		this.channel = channel;
+		this.title = title;
+		this.color = color;
+		this.origUser = origUser;
+		this.player = player;
+		this.enemies = enemies;
+		this.turn = "player"
+		this.showSkills = false;
+
+		this.events = require('events');
+		this.emitter = new this.events.EventEmitter();
+		this.addListener();
+
+		this.log = new BattleLog(20, this.emitter);
+		player.addLog(this.log);
+		enemies.forEach(enemy => enemy.addLog(this.log));
+		var description = this.getFightDescription(player, enemies, this.log, this.turn)
+
+		const Discord = require ('discord.js');
+		var embed = new Discord.RichEmbed()
+	    .setTitle(title)
+	    .setDescription(description)
+	    .setColor(color)
+
+	    const client = new Discord.Client();
+
+	    function emoji (id) {
+			return client.emojis.get(id).toString();
+		}
+
+		const e1= getEmojiChar("A");
+		const e2 = getEmojiChar("B");
+		const e3 = getEmojiChar("C");
+		const e4 = getEmojiChar("D");
+		const e5 = getEmojiChar("M");
+		const e6 = getEmojiChar("skill");
+		const e7 = getEmojiChar("leave");
+
+		var emojiList = [e1, e2, e3, e4, e5, e6, e7];
+
+	    const filter = (reaction, user) => {
+	        return emojiList.includes(reaction.emoji.name) &amp;&amp; user.id === origUser;
+	    }; 
+
+	    var turn = "player";
+
+	    channel.send(embed)
+	    .then((message) => {
+	    	this.message = message;
+	    	this.embed = embed;
+	    	this.filter = filter;
+	    	this.reactWith(message, emojiList);
+	    	this.getReactions(message, embed, filter);
+	    })
+	    .catch(() => console.error('One of the emojis failed to react.'))
+	}
+
+	addListener() {
+		this.emitter.addListener("Update", data => this.update());
+	}
+
+	getReactions() {
+		this.message.edit(this.embed)
+		.then(() => {
+			let collector = this.message.createReactionCollector(this.filter, { max: 1, time: 20000, errors: ['time'] });
+			var exit = false;
+
+	    	collector.on('collect',async reaction => {
+	    		this.reactTo(reaction.emoji);
+	    		collector.stop();
+
+	    		await reaction.remove(this.origUser);
+	    	});
+	    	collector.on('end', collected => {
+	    		if (collected.size > 0 &amp;&amp; exit == false) {
+	    			this.getReactions();
+	    		} else {
+	    			this.update(true);
+	    		}
+	    	});
+		})
+	}
+
+	update(end = false) {
+		var text = this.getFightDescription(this.player, this.enemies, this.log, this.turn);
+		if (end) {
+			text += "\n\n -> The Battle is Over! &lt;-";
+			battleEnd(true);
+			this.message.clearReactions();
+		}
+		this.embed.setDescription(text);
+	    this.message.edit(this.embed);
+	}
+
+	battleEnd(win) {
+		if (win) {
+			printMessage(this.channel, "You won a battle and gained " + exp + " XP!");
+			var exp = 0;
+			this.enemies.forEach(enemy => {
+				exp += enemy.getExp();
+			});
+			this.player.giveXP(exp);
+		}
+	}
+
+	reactTo(emoji) {
+		var text = "";
+		var exit = false;
+
+		var actionList = [];
+		var playerAction = false;
+		if (this.turn == "player") {
+			if (this.showSkills) {
+				actionList = this.player.getSkillActions("attack");
+			} else {
+				actionList = this.player.getAttackActions();
+			}
+		} else {
+			if (this.showSkills) {
+				actionList = this.player.getSkillActions("defend");
+			} else {
+				actionList = this.player.getDefendActions();
+			}
+		}
+
+		var firstEnemy;
+		for (var i = 0; i &lt; this.enemies.length; i++) {
+			let enemy = this.enemies[i];
+			firstEnemy = enemy;
+			if (enemy.isAlive())  {
+				break;
+			}
+		}
+
+		if (actionList.length &lt; 1) {
+			text = "Passing...";
+			playerAction = true;
+		} else {
+			switch(emoji.name) {
+				case getEmojiChar("A"):
+					if (actionList[0] != undefined) {
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[0]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[0]);
+						}
+					} else {
+						this.log.add("Action not avaliable!");
+					}
+					break;
+				case getEmojiChar("B"):
+					if (actionList[1] != undefined) {
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[1]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[1]);
+						}
+					} else {
+						this.log.add("Action not avaliable!");
+					}
+					break;
+				case getEmojiChar("C"):
+					if (actionList[2] != undefined) {
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[2]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[2]);
+						}
+					} else {
+						this.log.add("Action not avaliable!");
+					}
+					break;
+				case getEmojiChar("D"):
+					if (actionList[3] != undefined) {
+						playerAction = true;
+						if (this.showSkills) {
+							playerAction = this.player.castSkill(firstEnemy, actionList[3]);
+						} else {
+							this.player.attackEnemy(firstEnemy, actionList[3]);
+						}
+					} else {
+						this.log.add("Action not avaliable!");
+					}
+					break;
+				case getEmojiChar("M"):
+					this.log.add("Moved. Somewhere. Nobody knows. But your still there. Hmm...");
+					exit = false;
+					break;
+				case getEmojiChar("skill"):
+					if (this.showSkills) {
+						this.showSkills = false;
+					} else {
+						this.showSkills = true;
+					}
+					this.update();
+					//this.log.add("You want to use your incredibly overpowered magic spell! But you dont have enough mana...");
+					exit = false;
+					break;
+				case getEmojiChar("leave"):
+					this.log.add(this.player.toString() + " ran away from the fight like a coword!");
+					exit = true;
+					break;
+			}
+		}
+
+		if (playerAction == true) {
+			if (this.turn == "player") {
+				this.turn = "enemy";
+				this.showSkills = false;
+
+				console.log("&lt;--- Enemy Turn --->");
+				this.log.add("\n&lt;--- Enemy Turn --->\n")
+				this.enemies.forEach(enemy => {
+					enemy.startTurn();
+				});
+			} else {
+				this.enemies.forEach(enemy => {
+					text += "\n" +  this.enemyTurn(enemy, this.player);
+					this.turn = "player";
+				});
+				this.showSkills = false;
+				console.log("&lt;--- Player Turn --->");
+				this.log.add("\n&lt;--- Player Turn --->\n")
+				this.player.startTurn();
+			}
+			this.update();
+		}
+
+		var dead = true;
+		this.enemies.forEach(enemy => {
+			if (enemy.isAlive()) {
+				dead = false;
+			}
+		});
+		if (!this.player.isAlive() || dead == true) {
+			exit = true;
+			this.log.add("\nBattle end.");
+		}
+
+		if (exit) { this.update(true) }
+	}
+
+	enemyTurn(creep, player) {
+		if (creep.isAlive()) {
+			var pattern = creep.getClass();
+			var attackActions = creep.getAttackActions();
+			var attackOption = getRandomElement(attackActions);
+			var text = "";
+			switch(pattern) {
+				case 'Fighter':
+					return creep.attackEnemy(player, attackOption);
+			}
+		}
+		return "";
+	}
+
+	getFightDescription(player, enemies, log, turn) {
+		var playerDeath = "";
+		if (!player.isAlive()) {playerDeath = " ☠";}
+
+		var enemyText = "";
+		enemies.forEach(enemy => {
+			if (enemyText == "") {
+				enemyText += enemy.toString();
+			} else {
+				enemyText += ", " + enemy.toString();
+			}
+		})
+
+		var startLetter = "A";
+		if (enemies.length > 1) {
+			enemies.forEach(enemy => {
+				var unitName = enemy.getName() + " " + startLetter;
+				startLetter = String.fromCharCode(startLetter.charCodeAt(0) + 1);
+				enemy.setName(unitName);
+			});
+		}
+
+		var text = "Watch out for this epic battle between `" + player.toString() + "` and `" + enemyText + "`            !";
+		text += "\n```";
+
+		enemies.forEach(enemy => {
+			var enemyDeath = "";
+			if (!enemy.isAlive()) {enemyDeath = " ☠";}
+
+			text += this.visualizeHP(enemy) + "\n";
+			text += this.visualizeMana(enemy) + "\n";
+			text += "⨠ " + enemy.toString() + enemyDeath + "\n\n";
+
+		});
+		
+		text += "&lt;------------------------------------------------>\n";
+		text += log.toString();
+		text += "&lt;------------------------------------------------>\n\n" + this.visualizeHP(player) + "\n";
+		text += this.visualizeMana(player) + "\n";
+		text += "⨠ " + player.toString() + playerDeath + "\n\n";
+		if (turn == "player") {
+			if (this.showSkills) {
+				text += "It's your turn!\n" + this.getUnitOptions(player, "attackSkills");
+			} else {
+				text += "It's your turn!\n" + this.getUnitOptions(player, "attack");
+			}
+		} else {
+			if (this.showSkills) {
+				text += "It's your turn!\n" + this.getUnitOptions(player, "defendSkills");
+			} else {
+				text += "It's the enemies turn!\n" + this.getUnitOptions(player, "defend");
+			}
+		}
+		
+		text += "```";
+
+		return text;
+	}
+
+	getUnitOptions(unit, type) {
+		var actions = [];
+		var symbols = ['A', 'B', 'C', 'D'];
+		var text = "";
+		var wording = "";
+		if (type == "attack") {
+			actions = unit.getAttackActions();
+			text += "Your Attack Actions:\n";
+			wording = "Attack";
+		} else if (type == "defend") {
+			actions = unit.getDefendActions();
+			text += "Your Defend Actions:\n";
+			wording = "Defend";
+		} else if (type == "attackSkills") {
+			actions = unit.getSkillActions("attack");
+			text += "Your Attack Skills:\n";
+			wording = "Use ";
+		} else if (type == "defendSkills") {
+			actions = unit.getSkillActions("defend");
+			text += "Your Defend Skills:\n";
+			wording = "Use ";
+		}
+		if (actions.length > 0) {
+			symbols.forEach((x, index) => {
+				if (actions[index] != undefined) {
+					text += " - " + x + ": " + wording + " " + actions[index] + "\n";
+				} else {
+					text += " - " + x + ": Nothing\n";
+				}
+			});
+			return text;
+		} else {
+			symbols.forEach((x, index) => {
+				text += " - " + x + ": Pass\n";
+			});
+			return text;
+		}
+	}
+
+	visualizeHP(unit) {
+		var text = "⦋";
+		var blockCount = Math.floor((unit.curHP / unit.maxHP) * 25);
+		for (var i = 0; i &lt; blockCount; i++) {
+			text += "■";
+		}
+		for (var i = blockCount; i &lt; 25; i++) {
+			text += "·";
+		}
+		text += "⦌ " + unit.curHP + "/" + unit.maxHP;
+		return text;
+	}
+
+	visualizeMana(unit) {
+		var text = "⦓";
+		var blockCount = Math.floor((unit.curMana / unit.maxMana) * 16);
+		if (unit.maxMana == 0) { blockCount = 0 }
+		for (var i = 0; i &lt; blockCount; i++) {
+			text += "◆";
+		}
+		for (var i = blockCount; i &lt; 16; i++) {
+			text += "◇";
+		}
+		text += "⦔ " + unit.curMana + "/" + unit.maxMana;
+		return text;
+	}	
+
+	async reactWith(message, emojiList) {
+		if (emojiList.length > 0) {
+			for (var i = 0; i &lt; emojiList.length; i++) {
+				await message.react(emojiList[i]);
+			}
+		}
+	}
+}
+
+function printMessage(channel, text) {
+	channel.send(text)
+	.then(message => console.log(`Sent message: ${message.content}`))
+	.catch(console.error);
+}
+
+function getRandomElement(arr) {
+	var max = arr.length - 1;
+	return arr[getRandomInt(0,max)];
+}
+
+function getEmojiChar(char) {
+	switch(char) {
+		case '0':
+			return ":zero:";
+		case '1':
+			return ":one:";
+		case '2':
+			return ":two:";
+		case '3':
+			return ":three:";
+		case '4':
+			return ":four:";
+		case '5':
+			return ":five:";
+		case '6':
+			return ":six:";
+		case '7':
+			return ":seven:";
+		case '8':
+			return ":eight:";
+		case '9':
+			return ":nine:";
+		case 'A':
+			return "🇦";
+		case 'B':
+			return "🇧";
+		case 'C':
+			return "🇨";
+		case 'D':
+			return "🇩";
+		case 'E':
+			return "🇪";
+		case 'F':
+			return "🇫";
+		case 'G':
+			return "🇬";
+		case 'H':
+			return "🇭";
+		case 'I':
+			return "🇮";
+		case 'J':
+			return "🇯";
+		case 'K':
+			return "🇰";
+		case 'L':
+			return "🇱";
+		case 'M':
+			return "🇲";
+		case 'N':
+			return "🇳";
+		case 'O':
+			return "🇴";
+		case 'P':
+			return "🇵";
+		case 'Q':
+			return "🇶";
+		case 'R':
+			return "🇷";
+		case 'S':
+			return "🇸";
+		case 'T':
+			return "🇹";
+		case 'U':
+			return "🇺";
+		case 'V':
+			return "🇻";
+		case 'W':
+			return "🇼";
+		case 'X':
+			return "🇽";
+		case 'Y':
+			return "🇾";
+		case 'Z':
+			return "🇿";
+		case 'attack':
+			return "⚔";
+		case 'defend':
+			return "🛡";
+		case 'skill':
+			return "🔥"
+		case 'leave':
+			return "🏳";
+		break;
+	}
+	return "";
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+module.exports.BattleLog = BattleLog;
+module.exports.FightWindow = FightWindow;</code></pre>
         </article>
     </section>
 
@@ -107,13 +625,13 @@ module.exports.BattleLog = BattleLog;</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_character.html">core/character</a></li><li><a href="module-core_item.html">core/item</a></li></ul><h3>Classes</h3><ul><li><a href="BattleLog.html">BattleLog</a></li><li><a href="Unit.html">Unit</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_character.html">core/character</a></li><li><a href="module-core_item.html">core/item</a></li></ul><h3>Classes</h3><ul><li><a href="BattleLog.html">BattleLog</a></li><li><a href="Modifier.html">Modifier</a></li><li><a href="Skill.html">Skill</a></li><li><a href="Unit.html">Unit</a></li></ul><h3>Global</h3><ul><li><a href="global.html#applyModifier">applyModifier</a></li><li><a href="global.html#getTarget">getTarget</a></li><li><a href="global.html#showHelp">showHelp</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Feb 16 2019 01:46:17 GMT+0100 (GMT+01:00)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun May 26 2019 13:57:15 GMT+0200 (GMT+02:00)
 </footer>
 
 <script> prettyPrint(); </script>

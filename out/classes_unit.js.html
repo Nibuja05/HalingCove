@@ -28,17 +28,19 @@
         <article>
             <pre class="prettyprint source linenums"><code>
 /**
- * 
+ * A class for all units in a battle to quickly perform actions like attacking, casting, etc
  */
 class Unit {
 	/**
 	 * initializes a player with values from the database
-	 * @param  {Connection} con  database connection
-	 * @param  {User} user player
-	 * @return {Promise}      Promise
+	 * @param  {Connection} con  	database connection
+	 * @param  {User} user 			player
+	 * @return {Promise}      		promise
 	 */
 	initPlayer(con, user) {
 		return new Promise(async (resolve, reject) => {
+			this.con = con;
+			this.user = user;
 			const character = require('./../character.js');
 			const helper = require('./../helperfuncs.js');
 			var equip = await character.getEquip(con, user);
@@ -61,7 +63,7 @@ class Unit {
 				}
 			})
 
-			var sql = "SELECT name AS charName, level, class AS charClass, modifiers FROM charList WHERE active = 1 AND userID = " + user.id;
+			var sql = "SELECT name AS charName, level, class AS charClass FROM charList WHERE active = 1 AND userID = " + user.id;
 			var result = await con.query(sql);
 
 			if (result.length > 0) {
@@ -71,6 +73,7 @@ class Unit {
 				var hp = this.calculateStartHP(unitInfo.BaseHP, true);
 				var mana = this.calculateStartMana(unitInfo.BaseMana, true);
 				this.setVals(result.charName, "player", result.level, result.charClass, hp, mana, attackActions, defendActions);
+				this.loadSkills(unitInfo.Skills);
 				resolve();
 			} else {
 				reject();
@@ -89,7 +92,9 @@ class Unit {
 		var hp = this.calculateStartHP(unitInfo.BaseHP, false);
 		var mana = this.calculateStartMana(unitInfo.BaseMana, false);
 		this.creepDamage = [Number(unitInfo.PhysAttack), Number(unitInfo.MagicAttack), Number(unitInfo.PureAttack)];
-		this.setVals(name, "creep", level, unitInfo.MovePattern, hp, mana, unitInfo.AttackPattern, unitInfo.DefendPattern)
+		this.expVal = Number(unitInfo.Exp);
+		this.setVals(name, "creep", level, unitInfo.MovePattern, hp, mana, unitInfo.AttackPattern, unitInfo.DefendPattern);
+		this.loadSkills(unitInfo.Skills);
 	}
 	/**
 	 * calculates the starting HP
@@ -122,7 +127,7 @@ class Unit {
 	 */
 	setVals(unitName, unitType, level, unitClass, maxHP, maxMana, attackActions, defendActions) {
 		this.unitName = unitName;
-		this.level = level;
+		this.level = level; 
 		this.unitClass = unitClass;
 		this.unitType = unitType;
 		this.maxHP = maxHP;
@@ -133,6 +138,27 @@ class Unit {
 		this.modifiers = [];
 		this.attackActions = attackActions;
 		this.defendActions = defendActions;
+		this.range = 1;
+
+		this.AwaitEventEmitter = require('await-event-emitter');
+		this.emitter = new this.AwaitEventEmitter();
+	}
+	/**
+	 * initializes the skills of this unit
+	 * @param  {Dict} skills skill dictoionary from unitinfo.json
+	 */
+	loadSkills(skills) {
+		var Skill = require('./skill.js');
+		var actives = skills.Active;
+		this.actives = [];
+		for (const [key, value] of Object.entries(actives)) {
+			this.actives.push(new Skill(key, value, this, this.emitter));
+		}
+		var passives = skills.Passive;
+		this.passives = [];
+		for (const [key, value] of Object.entries(passives)) {
+			this.passives.push(new Skill(key, value, this, this.emitter));
+		}
 	}
 	/**
 	 * return the name if this unit
@@ -212,6 +238,16 @@ class Unit {
 		return this.unitClass;
 	}
 	/**
+	 * returns the amount of experience this unit has
+	 * @return {int} experience
+	 */
+	getExp() {
+		if (this.isCreep()) {
+			return this.expVal;
+		}
+		return 0;
+	}
+	/**
 	 * decides if this unit can survive gievn damage
 	 * @param  {int} damage damage to test
 	 * @return {Boolean}        status
@@ -249,28 +285,65 @@ class Unit {
 		return false;
 	}
 	/**
+	 * gives experience to this player (writes to database)
+	 * @param  {int} exp amount of experience
+	 */
+	async giveXP(exp) {
+		const character = require("./../character.js");
+		await character.addExperience(this.con, this.user, this.channel, exp);
+		console.log("[UT] Added " + exp + " XP to " + this.toString());
+	}
+	/**
 	 * deals damage to this unit
 	 * @param  {Array&lt;int>} damageTable 	damage table (Phys / Magic / Pure)
 	 * @return {int}             			sum of the true damage this unit received after all reductions
 	 */
-	dealDamage(damageTable) {
+	async dealDamage(damageTable) {
 		var damage = damageTable.damage;
 		var attacker = damageTable.attacker;
 		var range = damageTable.range;
+
+		await this.emitter.emit("OnTakeDamageBeforeReduction", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+		
+		//damage reduction (from armor etc) here
+		//
+		//
+		//
+
+		await this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+
+
 		var damageSum = damage[0] +  damage[1] +  damage[2]
 		if (this.canSurvive(damageSum)) {
 			this.curHP = this.curHP - damageSum;
 		} else {
 			this.curHP = 0;
-			this.alive = false;
+			this.kill();
 		}
-		return damageSum;
+
+		console.log("[UNIT] " + damageSum + " damage to " + this.toString());
+		if (damageSum == 0) {
+			damageSum = "no";
+		} 
+		if (this.isAlive()) {
+			var text = attacker.toString() + " attacked " + this.toString() + " and dealt " + damageSum + " damage!";
+		} else {
+			var text = attacker.toString() + " attacked " + this.toString() + " and dealt " + damageSum + " damage!";
+		}
+		this.battleLog.add(text);
+
+		await this.emitter.emit("OnTakeDamageFinal", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+
 	}
 	/**
 	 * kills this unit immideatly
 	 */
 	kill() {
 		this.alive = false;
+		this.battleLog.addDelayed(this.toString() + " died!");
+		this.modifiers.forEach(modifier => {
+			modifier.remove();
+		});
 	}
 	/**
 	 * is this unit a player?
@@ -285,9 +358,14 @@ class Unit {
 	/**
 	 * add a new modifier to this unit
 	 * @param {Modifier} modifier new modifier
+	 * @return {EventEmitter}	event emitter of this unit
 	 */
 	addModifier(modifier) {
-		this.modifiers.append(modifier);
+		this.modifiers.push(modifier);
+		console.log("[UNIT] Added Modifier '" + modifier.name + "'!");
+		//currently not used, cause it is printed to early -> delayed battle log adder?
+		//this.battleLog.add(this.toString() + " is now affected by " + modifier.name);
+		return this.emitter;
 	}
 	/**
 	 * remove a given modifier from this unit
@@ -297,7 +375,7 @@ class Unit {
 		var newModifiers = [];
 		this.modifiers.forEach(mod => {
 			if (!(mod === modifier)) {
-				newModifiers.append(mod);
+				newModifiers.push(mod);
 			}
 		});
 		this.modifiers = newModifiers;
@@ -310,7 +388,7 @@ class Unit {
 		var newModifiers = [];
 		this.modifiers.forEach(mod => {
 			if (!(mod.name == modifierName)) {
-				newModifiers.append(mod);
+				newModifiers.push(mod);
 			}
 		});
 		this.modifiers = newModifiers;
@@ -328,6 +406,25 @@ class Unit {
 	 */
 	getDefendActions() {
 		return this.defendActions;
+	}
+	/**
+	 * returns a list of all possible skill actions
+	 * @return {Array&lt;string>} possible skill actions
+	 */
+	getSkillActions(skillType) {
+		var textArr = [];
+		this.actives.forEach(active => {
+			if (skillType == "attack") {
+				if (active.isAttackSkill()) {
+					textArr.push(active.toString());
+				}
+			} else if (skillType == "defend") {
+				if (active.isDefendSkill()) {
+					textArr.push(active.toString());
+				}
+			}
+		});
+		return textArr;
 	}
 	/**
 	 * returns the attack damage of this unit as damage table
@@ -374,6 +471,55 @@ class Unit {
 		})
 		return damage;
 	}
+	/**
+	 * adds the current battle log to this unit, to add important stuff directly
+	 */
+	addLog(log) {
+		this.battleLog = log;
+	}
+	/**
+	 * called when a turn of this unit start, emits event
+	 */
+	startTurn() {
+		this.emitter.emit("OnTurnStart", this);
+	}
+	/**
+	 * attacks an enemy to deal damage
+	 * @param  {Unit} enemy 	unit to attack  	
+	 */
+	attackEnemy(enemy, option) {
+		var damageTable = {};
+		damageTable.attacker = this;
+		damageTable.range = this.range;
+		damageTable.damage = this.getAttackDamage();
+		enemy.dealDamage(damageTable);
+
+		this.emitter.emit("OnAttackLanded", {attacker:this, victim:enemy, attackOption:option, dealtDamage:trueDamage});
+	}
+	/**
+	 * activates a skill with given name on a target
+	 * @param  {Unit} enemy       target of the skill (optional)
+	 * @param  {string} skillName name of the skill
+	 * @return {Boolean}          did this activation consume a turn?
+	 */
+	castSkill(enemy, skillName) {
+		var skillName = skillName.substring(0, skillName.lastIndexOf(" "));
+		var skill
+		this.actives.forEach(active => {
+			if (active.name == skillName) {
+				skill = active;
+			}
+		});
+		var activate = skill.activate(enemy);
+		this.battleLog.add(activate.text);
+		if (!activate.success) {
+			return false;
+		}
+		if (skill.isBonusAction()) {
+			return false;
+		}
+		return true;
+	}
 }
 
 function getRandomInt(min, max) {
@@ -392,13 +538,13 @@ module.exports = Unit;</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_character.html">core/character</a></li><li><a href="module-core_item.html">core/item</a></li></ul><h3>Classes</h3><ul><li><a href="BattleLog.html">BattleLog</a></li><li><a href="Unit.html">Unit</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_character.html">core/character</a></li><li><a href="module-core_item.html">core/item</a></li></ul><h3>Classes</h3><ul><li><a href="BattleLog.html">BattleLog</a></li><li><a href="Modifier.html">Modifier</a></li><li><a href="Skill.html">Skill</a></li><li><a href="Unit.html">Unit</a></li></ul><h3>Global</h3><ul><li><a href="global.html#applyModifier">applyModifier</a></li><li><a href="global.html#getTarget">getTarget</a></li><li><a href="global.html#showHelp">showHelp</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Feb 16 2019 01:46:17 GMT+0100 (GMT+01:00)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun May 26 2019 13:57:15 GMT+0200 (GMT+02:00)
 </footer>
 
 <script> prettyPrint(); </script>
