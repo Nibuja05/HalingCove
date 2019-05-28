@@ -13,7 +13,7 @@ function getActionsFromItem(item) {
 			case 'Shield':
 				return ["High", "Left", "Right", "Low"];
 			case 'Magic':
-				return ["Middle"];
+				return ["Random"];
 			break;
 		}
 	}

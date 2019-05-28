@@ -6,7 +6,7 @@ async function start(con, user, channel) {
 	var FightWindow = require('./classes/helper.js').FightWindow;
 
 	var player = new Unit();
-	await player.initPlayer(con, user);
+	await player.initPlayer(con, user, channel);
 	var slime = new Unit();
 	slime.initCreep("Slime", 1);
 	var slime2 = new Unit();
@@ -18,12 +18,17 @@ async function start(con, user, channel) {
 async function test(con, user, channel) {
 	var Unit = require('./classes/unit.js');
 	var Skill = require('./classes/skill.js');
+	var Body = require('./classes/body.js');
 
 	var player = new Unit();
-	await player.initPlayer(con, user);
+	// await player.initPlayer(con, user);
 
-	var fortify = new Skill("Fortify", 1, player);
-	console.log(fortify.activate());
+	var testBody = new Body(player, "Human", "All", "All");
+	console.log(testBody.toString());
+
+	var slimeBody = new Body(player, "Slime", "None", "All");
+	console.log(slimeBody.toString());
+
 }
 
 module.exports.start = start;

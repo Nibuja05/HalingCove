@@ -9,10 +9,11 @@ class Unit {
 	 * @param  {User} user 			player
 	 * @return {Promise}      		promise
 	 */
-	initPlayer(con, user) {
+	initPlayer(con, user, channel) {
 		return new Promise(async (resolve, reject) => {
 			this.con = con;
 			this.user = user;
+			this.channel = channel;
 			const character = require('./../character.js');
 			const helper = require('./../helperfuncs.js');
 			var equip = await character.getEquip(con, user);
@@ -262,8 +263,8 @@ class Unit {
 	 */
 	async giveXP(exp) {
 		const character = require("./../character.js");
+		console.log("[UNIT] Added " + exp + " XP to " + this.toString());
 		await character.addExperience(this.con, this.user, this.channel, exp);
-		console.log("[UT] Added " + exp + " XP to " + this.toString());
 	}
 	/**
 	 * deals damage to this unit
@@ -275,15 +276,13 @@ class Unit {
 		var attacker = damageTable.attacker;
 		var range = damageTable.range;
 
-		await this.emitter.emit("OnTakeDamageBeforeReduction", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+		console.log("\x1b[31m%s\x1b[0m", "[UNIT] Emit Event: 'OnTakeDamage'");
+		this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
 		
-		//damage reduction (from armor etc) here
+		//damage reduction (from armor, modifiers etc) here
 		//
 		//
 		//
-
-		await this.emitter.emit("OnTakeDamage", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
-
 
 		var damageSum = damage[0] +  damage[1] +  damage[2]
 		if (this.canSurvive(damageSum)) {
@@ -304,7 +303,8 @@ class Unit {
 		}
 		this.battleLog.add(text);
 
-		await this.emitter.emit("OnTakeDamageFinal", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
+		console.log("\x1b[31m%s\x1b[0m", "[UNIT] Emit Event: 'OnTakeDamageFinal'");
+		this.emitter.emit("OnTakeDamageFinal", {attacker:attacker, victim:this, distance:range, dealtDamage:damageSum, origDamage:damage});
 
 	}
 	/**
@@ -453,6 +453,10 @@ class Unit {
 	 * called when a turn of this unit start, emits event
 	 */
 	startTurn() {
+		if (this.isPlayer()) {
+			console.log("<--- New Turn --->")
+		}
+		console.log("\x1b[31m%s\x1b[0m", "[UNIT] Emit Event: 'OnTurnStart'");
 		this.emitter.emit("OnTurnStart", this);
 	}
 	/**
@@ -466,7 +470,8 @@ class Unit {
 		damageTable.damage = this.getAttackDamage();
 		enemy.dealDamage(damageTable);
 
-		this.emitter.emit("OnAttackLanded", {attacker:this, victim:enemy, attackOption:option, dealtDamage:trueDamage});
+		console.log("\x1b[31m%s\x1b[0m", "[UNIT] Emit Event: 'OnAttackLanded'");
+		this.emitter.emit("OnAttackLanded", {attacker:this, victim:enemy, attackOption:option, dealtDamage:damageTable});
 	}
 	/**
 	 * activates a skill with given name on a target

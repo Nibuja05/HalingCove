@@ -13,12 +13,13 @@ const prefix = "$$";
 client.login(auth.token);
 
 client.on('ready', () => {
-  	console.log(`[BOT] Logged in as ${client.user.tag}!`);
+  	console.log("\x1b[36m%s\x1b[0m", `[BOT] Logged in as ${client.user.tag}!`);
   	client.user.setActivity(prefix + " as prefix");
 });
 
 //Establish Connection to the database
-console.log("[DB] Start connecting...");
+console.log("\n");
+console.log("\x1b[32m%s\x1b[0m", "[DB] Start connecting...");
 
 var server = auth.server;
 var database = auth.database;
@@ -35,7 +36,7 @@ var con = mysql.createConnection({
 con.connect(err => {
     if(err) throw err;
     con.query = util.promisify(con.query);
-    console.log("[DB] Connected!");
+    console.log("\x1b[32m%s\x1b[0m", "[DB] Connected!");
 });
 
 client.on('message', async msg => {
@@ -55,7 +56,7 @@ client.on('message', async msg => {
 
 			userCheck(msg.author)
 
-			console.log("[BOT] Executing: " + newMessage + "; confirm: " + confirm);
+			console.log("\x1b[33m%s\x1b[0m", "[BOT] Executing: " + newMessage + "; confirm: " + confirm);
 
 			switch(cmd) {
 			    case 'ping':
@@ -115,10 +116,10 @@ async function userCheck(user) {
     var result = await con.query(sql);
     
     if (result.length < 1) {
-        console.log("[DB] No user with ID " + user.id + ". Creating new entry")
+        console.log("\x1b[32m%s\x1b[0m", "[DB] No user with ID " + user.id + ". Creating new entry")
         var sql = "INSERT INTO userList (userID, name) VALUES ('" + user.id + "', '" + user.username + "')";
         result = await con.query(sql);
-        console.log("[DB] 1 record inserted (userList)");
+        console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record inserted (userList)");
     }
 }
 
@@ -142,7 +143,7 @@ function checkLastCommand(msg, callback) {
 
 	    	//if the message is only the prefix, execute last command again
 	        if (message === prefix) {
-	            console.log("[BOT] Executing command again: $$" + result[0].functionName);
+	            console.log("\x1b[33m%s\x1b[0m", "[BOT] Executing command again: $$" + result[0].functionName);
 	            callback(false, prefix + result[0].functionName);
 
 	        } else {
@@ -162,7 +163,7 @@ function checkLastCommand(msg, callback) {
 	                    sql = "UPDATE lastCommand SET optValues = 'none' WHERE userID = " + user.id;
 	                    result = await con.query(sql);
 	                    
-	                    console.log("[DB] 1 record updated (lastCommand)")
+	                    console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (lastCommand)")
 	                    var text = "Action canceled"
 	                    printMessage(channel, text);
 	                    return;
@@ -178,7 +179,7 @@ function checkLastCommand(msg, callback) {
 	                sql = "UPDATE lastCommand SET functionName = '" + functionName + "' WHERE userID = " + user.id;
 	                result = await con.query(sql);
 
-	                console.log("[DB] 1 record updated (lastCommand)");
+	                console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record updated (lastCommand)");
 	                callback(false, message);
 	            }
 	        }
@@ -191,7 +192,7 @@ function checkLastCommand(msg, callback) {
 	            sql = "INSERT INTO lastCommand (userID, functionName, optValues) VALUES (" + user.id + ", '" + functionName + "', 'none')";
 	            result = await con.query(sql);
 
-	            console.log("[DB] 1 record inserted (lastCommand)");
+	            console.log("\x1b[32m%s\x1b[0m", "[DB] 1 record inserted (lastCommand)");
 	            callback(false, message);
 	        }
 	    }
@@ -241,6 +242,7 @@ function manageDevCommands(msg, args, confirm) {
 	var item = require('./core/item.js');
 	var fight = require('./core/fight.js');
 	var explore = require('./core/explore.js');
+	var character = require('./core/character.js');
     var cmd = args[0];
     args = args.splice(1);
 
@@ -251,9 +253,12 @@ function manageDevCommands(msg, args, confirm) {
         case 'test':
             console.log("[DEV] Test!")
             break;
-        case 'createRandomItem':
+        case 'createRandomItems':
             item.createRandomMultiple(con, channel, user, args);
             break;
+        case 'createRandomItem':
+        	item.createSpecific(con, channel, user, args);
+        	break;
         case 'testFight':
         	fight.start(con, user, channel);
         	break;
@@ -263,6 +268,10 @@ function manageDevCommands(msg, args, confirm) {
         case 'playerTest':
         	fight.test(con, user, channel);
         	break;
+        case 'classChange':
+        	character.changeClass(con, user, channel, args);
+        	break;
+
     }
 }
 
@@ -355,6 +364,6 @@ function manageHelp(msg, args, confirm) {
 
 function printMessage(channel, text) {
 	channel.send(text)
-  	.then(message => console.log(`[BOT] Sent message: ${message.content}`))
+  	.then(message => console.log("\x1b[36m%s\x1b[0m", `[BOT] Sent message: ${message.content}`))
   	.catch(console.error);
 }
