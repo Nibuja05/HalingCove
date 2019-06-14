@@ -62,7 +62,7 @@ function sendSkillInfo(pre, user, param, channel) {
         if (skillInfo.HealthCost > 0 ) { text += "\nHealth Cost: " + skillInfo.HealthCost }
         text += "\nTurn : " + skillInfo.Turn;
         text += "\nCooldown: " + skillInfo.Cooldown;
-        text += "\nOther Info (not available yet)";
+        text += "\nType: Active\n\nOther Info (not available yet)";
         text += "\n```";
 
         printMessage(channel, text);
@@ -71,7 +71,7 @@ function sendSkillInfo(pre, user, param, channel) {
         var text = "Displaying information about the skill **" + param + "**:\n```";
         var skillInfo = passiveSkills[param];
         text += "\nDescription : " + skillInfo.Description;
-        text += "\n";
+        text += "\nType: Passive\n";
         text += "\nOther Info (not available yet)";
         text += "\n```";
 

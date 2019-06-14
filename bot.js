@@ -237,12 +237,13 @@ function manageCharacter(msg, args, confirm) {
     }
 }
 
-function manageDevCommands(msg, args, confirm) {
+async function manageDevCommands(msg, args, confirm) {
 
-	var item = require('./core/item.js');
-	var fight = require('./core/fight.js');
-	var explore = require('./core/explore.js');
-	var character = require('./core/character.js');
+	const item = require('./core/item.js');
+	const fight = require('./core/fight.js');
+	const explore = require('./core/explore.js');
+	const character = require('./core/character.js');
+    const helper = require('./core/helperfuncs.js');
     var cmd = args[0];
     args = args.splice(1);
 
@@ -271,6 +272,21 @@ function manageDevCommands(msg, args, confirm) {
         case 'classChange':
         	character.changeClass(con, user, channel, args);
         	break;
+        case 'DB':
+            var sql = "SELECT functionName, optValues FROM lastCommand WHERE userID = " + user.id;
+            var result = await helper.databaseRequest(con, sql);
+            console.log(result);
+            break;
+        case 'item':
+            var itemID = 1;
+            var result = await helper.getItemByID(con, itemID);
+            console.log(result);
+            break;
+        case 'uItem':
+            var itemID = 1;
+            var result = await helper.getUniqueItemByID(con, itemID);
+            console.log(result);
+            break;
 
     }
 }

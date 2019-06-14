@@ -6,12 +6,13 @@
 	"author": "Nibuja",
 	"dependencies": {
 		"await-event-emitter": "^1.2.0",
-		"discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
-		"discord.js": "^11.4.2",
-		"mysql": "^2.16.0",
-		"winston": "^3.1.0"
+		"await-to-js": "^2.1.1",
+		"discord.io": "^2.5.3",
+		"discord.js": "^11.5.1",
+		"mysql": "^2.17.1",
+		"winston": "^3.2.1"
 	},
 	"devDependencies": {
-		"jsdoc": "^3.5.5"
+		"jsdoc": "^3.6.2"
 	}
 }

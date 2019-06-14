@@ -2,6 +2,8 @@
  * @module core/item
  */
 
+const helper = require('./helperfuncs.js');
+
 /**
  * generates an item with radnom properties and saves it in the database
  * @param  {Connection} con 	database connection 
